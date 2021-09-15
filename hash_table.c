@@ -113,6 +113,23 @@ char *ioopm_hash_table_lookup(ioopm_hash_table_t *ht, int key, bool *success){
   return NULL;
 }
 
+void entry_destroy(entry_t *entry){
+    free(entry);
+}
+
+char *ioopm_hash_table_remove(ioopm_hash_table_t *ht, int key){
+  entry_t *pre_entry= find_previous_entry_for_key(key,ht->buckets[possitve_modulo(key, 17)]);
+  entry_t *delete_entry = pre_entry->next;
+  if(delete_entry ==NULL){
+    return NULL;
+  }
+  entry_t *next_entry = delete_entry->next;
+  pre_entry->next = next_entry; // uppdaterar next i pre_entry
+  char *value_deleted = delete_entry->value;
+  entry_destroy(delete_entry); // Kanske behövs mer free för (value/key/next)
+  return value_deleted;
+}
+/*
 
 int main(int argc, char *argv[])
 {
@@ -129,15 +146,14 @@ int main(int argc, char *argv[])
   //ioopm_hash_table_insert(ht,1,"tr3" );
   bool *success = calloc(1, sizeof(bool));
   char *result = ioopm_hash_table_lookup(ht, 54, success);
-  if (success && result != NULL){
+  if (*success && result != NULL){
   printf("%s\n", result);
   }
-  if (!success){
+  if (!*success){
     // Här kan vi byta EINVAL (errno) till rimligt error message
   printf("done\n");
   }
   free(success);
-
-
   return 0;
 }
+*/
