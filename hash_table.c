@@ -7,26 +7,26 @@
 #define No_Buckets 17
 //#include <errno.h>
 
+//the types from above
+typedef struct entry ioopm_entry_t;
+typedef struct hash_table ioopm_hash_table_t;
+
 struct entry
 {
   int key;       // holds the key
   char *value;   // holds the value
-  ioomp_entry_t *next; // points to the next entry (possibly NULL)
+  ioopm_entry_t *next; // points to the next entry (possibly NULL)
 };
 
 struct hash_table
 {
-  ioomp_entry_t *buckets[No_Buckets];
+  ioopm_entry_t *buckets[No_Buckets];
 };
 
-//the types from above
-typedef struct entry ioomp_entry_t;
-typedef struct hash_table ioopm_hash_table_t;
 
-
-static ioomp_entry_t *entry_create(int key, char *value, ioomp_entry_t *next)
+static ioopm_entry_t *entry_create(int key, char *value, ioopm_entry_t *next)
 {
-    ioomp_entry_t *entry = calloc(1, sizeof(ioomp_entry_t));
+    ioopm_entry_t *entry = calloc(1, sizeof(ioopm_entry_t));
     entry->key = key;
     entry->value = value;
     entry->next = next;
@@ -35,9 +35,9 @@ static ioomp_entry_t *entry_create(int key, char *value, ioomp_entry_t *next)
 
 ioopm_hash_table_t *ioopm_hash_table_create()
 {
-  /// Allocate space for a ioopm_hash_table_t = No_Buckets pointers to ioomp_entry_t's
+  /// Allocate space for a ioopm_hash_table_t = No_Buckets pointers to ioopm_entry_t's
   ioopm_hash_table_t *result = calloc(1, sizeof(ioopm_hash_table_t));
-  /// Initialise the ioomp_entry_t pointers to NULL
+  /// Initialise the ioopm_entry_t pointers to NULL
   for (int i = 0; i < No_Buckets; ++i)
     {
       result->buckets[i] = NULL;
@@ -55,9 +55,9 @@ Returnerar NULL om entry ska läggas först i bucketen,
 annars returnerar entry för den som ligger före
 */
 
-static ioomp_entry_t *find_previous_entry_for_key(int key, ioomp_entry_t *cursor)
+static ioopm_entry_t *find_previous_entry_for_key(int key, ioopm_entry_t *cursor)
 {
-  ioomp_entry_t *tmp = cursor->next;
+  ioopm_entry_t *tmp = cursor->next;
   if (tmp == NULL)
   {
     return cursor;
@@ -81,7 +81,7 @@ static int possitve_modulo (int n, int mod){
   return n;
 }
 
-static void update_entry_value(char* value, ioomp_entry_t *entry, int key){
+static void update_entry_value(char* value, ioopm_entry_t *entry, int key){
     if(key == entry->key){ //key == cur_entry->key
     entry->value = value; //ändrar value på en nyckel som finns
     }
@@ -91,8 +91,8 @@ void ioopm_hash_table_insert(ioopm_hash_table_t *ht, int key, char *value){
   /// Calculate the bucket for this entry
   int bucket = possitve_modulo(key, No_Buckets);
 
-  ioomp_entry_t *pre_entry = find_previous_entry_for_key(key, ht->buckets[bucket]);//en av två alternativ, kopia vs adress
-  ioomp_entry_t *cur_entry;
+  ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, ht->buckets[bucket]);//en av två alternativ, kopia vs adress
+  ioopm_entry_t *cur_entry;
 
   if(pre_entry->next != NULL){ //"om vi inte är i slutet av listan, alltså finns nyckeln"
     update_entry_value(value, pre_entry->next, key);
@@ -103,8 +103,8 @@ void ioopm_hash_table_insert(ioopm_hash_table_t *ht, int key, char *value){
 
 char *ioopm_hash_table_lookup(ioopm_hash_table_t *ht, int key, bool *success){
   /// Find the previous entry for key
-  ioomp_entry_t *tmp = find_previous_entry_for_key(key,ht->buckets[key % No_Buckets]);
-  ioomp_entry_t *next = tmp->next;
+  ioopm_entry_t *tmp = find_previous_entry_for_key(key,ht->buckets[key % No_Buckets]);
+  ioopm_entry_t *next = tmp->next;
   if (next != NULL)
   {
     if(next->key == key)
@@ -117,25 +117,26 @@ char *ioopm_hash_table_lookup(ioopm_hash_table_t *ht, int key, bool *success){
   return NULL;
 }
 
-static void entry_destroy(ioomp_entry_t *entry){
+static void entry_destroy(ioopm_entry_t *entry){
     free(entry);
 }
 
 char *ioopm_hash_table_remove(ioopm_hash_table_t *ht, int key){
-  ioomp_entry_t *pre_entry= find_previous_entry_for_key(key,ht->buckets[possitve_modulo(key, No_Buckets)]);
-  ioomp_entry_t *delete_entry = pre_entry->next;
+  ioopm_entry_t *pre_entry= find_previous_entry_for_key(key,ht->buckets[possitve_modulo(key, No_Buckets)]);
+  ioopm_entry_t *delete_entry = pre_entry->next;
   if(delete_entry ==NULL){
     return NULL;
   }
-  ioomp_entry_t *next_entry = delete_entry->next;
+  ioopm_entry_t *next_entry = delete_entry->next;
   pre_entry->next = next_entry; // uppdaterar next i pre_entry
   char *value_deleted = delete_entry->value;
   entry_destroy(delete_entry); // Kanske behövs mer free för (value/key/next)
   return value_deleted;
 }
 
-static void bucket_destroy(ioomp_entry_t *current_entry){
-  ioomp_entry_t *next_entry;
+static void bucket_destroy(ioopm_entry_t *current_entry)
+{
+  ioopm_entry_t *next_entry;
    while (current_entry->next != NULL)
  {
    next_entry = current_entry->next;
@@ -152,7 +153,25 @@ void ioopm_hash_table_destroy(ioopm_hash_table_t *ht){
   free(ht);
 }
 
-/*
+void itterate_over_bucket(int *counter, ioopm_entry_t *entry)
+{
+  while (entry->next != NULL)
+  {
+    counter++;
+    entry = entry->next;
+  }
+}
+
+int ioopm_hash_table_size(ioopm_hash_table_t *ht){
+ int c = 0;
+ for (int i = 0; i < No_Buckets; i++)
+ {
+   ioopm_entry_t *first_entry = ht->buckets[i];
+   itterate_over_bucket(&c, first_entry);
+ }
+ return c;
+}
+
 int main(int argc, char *argv[])
 {
   ioopm_hash_table_t *ht = ioopm_hash_table_create();
@@ -175,8 +194,11 @@ int main(int argc, char *argv[])
     // Här kan vi byta EINVAL (errno) till rimligt error message
   printf("Did not find a value\n");
   }
+  int x = ioopm_hash_table_size(ht);
+  printf("%d\n", x);
   ioopm_hash_table_destroy(ht);
   return 0;
 }
-*/
+
+
 

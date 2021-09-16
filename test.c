@@ -91,7 +91,7 @@ void test_table_lookup(void){
 }
 
 void test_remove(void){
-    ioopm_hash_table_t* ht = ioopm_hash_table_create();
+    ioopm_hash_table_t *ht = ioopm_hash_table_create();
     ioopm_hash_table_insert(ht,1,"a");
     ioopm_hash_table_insert(ht,-16,"b");
     ioopm_hash_table_insert(ht,18,"c");
@@ -113,6 +113,19 @@ void test_remove(void){
     ioopm_hash_table_destroy(ht);
 }
 
+void test_hashtable_size(){
+  ioopm_hash_table_t *ht = ioopm_hash_table_create();
+  CU_ASSERT(ioopm_hash_table_size(ht)==0);
+  ioopm_hash_table_insert(ht,1,"a");
+  int x = ioopm_hash_table_size(ht);
+  printf("%d\n", x);
+  CU_ASSERT(ioopm_hash_table_size(ht)==1);
+  ioopm_hash_table_insert(ht,-16,"b");
+  ioopm_hash_table_insert(ht,18,"c");
+  CU_ASSERT(ioopm_hash_table_size(ht)==3);
+  ioopm_hash_table_destroy(ht);
+}
+
 int main()
 {
   CU_pSuite test_suite1 = NULL;
@@ -130,7 +143,8 @@ int main()
   if (
     (NULL == CU_add_test(test_suite1, "test 1: table create", test_table_create)) ||
     (NULL == CU_add_test(test_suite1, "test 2: insert", test_table_insert_lookup)) ||
-    (NULL == CU_add_test(test_suite1, "test 3: entry remove", test_remove))
+    (NULL == CU_add_test(test_suite1, "test 3: entry remove", test_remove)) ||
+    (NULL == CU_add_test(test_suite1, "test 4: hash size", test_hashtable_size))
     )
     {
       CU_cleanup_registry();
