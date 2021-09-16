@@ -5,7 +5,7 @@ C_LINK_OPTIONS = -lm
 CUNIT_LINK     = -lcunit
 C_GDB_TEST     = gcc -pedantic -Wall -g
 C_UNIT_TEST    = gcc -ggdb -Wall -std=c11 -g
-C_VALGRIND     = valgrind --leak-check=full -g
+C_VALGRIND     = valgrind --leak-check=full
 
 #-o gör en o fil som kan köras
 
@@ -21,8 +21,8 @@ rungdb: hash_table.c
 unittest: hash_table.c test.c
 	$(C_UNIT_TEST) hash_table.c test.c -o unittest -lcunit
 
-runvalgrind: hash_table.c
-	$(C_VALGRIND) hash_table.c -o runvalgrind
+runvalgrind: unittest
+	$(C_VALGRIND) ./unittest -g
 
 myprog.final: file1.o file2.o file3.o
 # TODO: add e.g. optimisation flags, remove unnecessary linking, etc.

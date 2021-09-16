@@ -15,7 +15,7 @@
  */
 
 //the types from above
-typedef struct entry entry_t;
+typedef struct entry ioomp_entry_t;
 typedef struct hash_table ioopm_hash_table_t;
 
 

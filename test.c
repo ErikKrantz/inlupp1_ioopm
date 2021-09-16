@@ -4,21 +4,22 @@
 #include <stdbool.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
+#define No_Buckets 17
 
 
-typedef struct entry entry_t;
+typedef struct entry ioomp_entry_t;
 typedef struct hash_table ioopm_hash_table_t;
 
 struct entry
 {
   int key;       // holds the key
   char *value;   // holds the value
-  entry_t *next; // points to the next entry (possibly NULL)
+  ioomp_entry_t *next; // points to the next entry (possibly NULL)
 };
 
 struct hash_table
 {
-  entry_t *buckets[17];
+  ioomp_entry_t *buckets[No_Buckets];
 };
 
 struct answer
@@ -41,7 +42,7 @@ void test_table_create(void)
 {
   ioopm_hash_table_t* ht = ioopm_hash_table_create();
   int key = 18;
-  CU_ASSERT(ht->buckets[key%17]->key == 0);
+  CU_ASSERT(ht->buckets[key%No_Buckets]->key == 0);
   CU_ASSERT(true);
   ioopm_hash_table_destroy(ht);
 }
@@ -49,13 +50,13 @@ void test_table_create(void)
 void test_table_insert_lookup(void)
 {
     ioopm_hash_table_t* ht = ioopm_hash_table_create();
-    char *value[17] = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q"};
+    char *value[No_Buckets] = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q"};
     bool *success = calloc(1, sizeof(bool));
-    for (int i = 0; i < 17; i++)
+    for (int i = 0; i < No_Buckets; i++)
     {
         ioopm_hash_table_insert(ht,i,value[i]);
     }
-    for (int i = 0; i < 17; i++)
+    for (int i = 0; i < No_Buckets; i++)
     {
         CU_ASSERT(ioopm_hash_table_lookup(ht,i,success) == value[i]);
     }
