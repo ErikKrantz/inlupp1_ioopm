@@ -43,6 +43,7 @@ void test_table_create(void)
   int key = 18;
   CU_ASSERT(ht->buckets[key%17]->key == 0);
   CU_ASSERT(true);
+  ioopm_hash_table_destroy(ht);
 }
 
 void test_table_insert_lookup(void)
@@ -64,6 +65,8 @@ void test_table_insert_lookup(void)
     CU_ASSERT(!strcmp(ioopm_hash_table_lookup(ht,18, success), "s"));
     CU_ASSERT(true);
     free(success);
+    ioopm_hash_table_destroy(ht);
+
 }
 
 void test_table_lookup(void){
@@ -83,6 +86,7 @@ void test_table_lookup(void){
     ioopm_hash_table_lookup(ht,0,success);
     CU_ASSERT(!success);
     free(success);
+    ioopm_hash_table_destroy(ht);
 }
 
 void test_remove(void){
@@ -105,7 +109,7 @@ void test_remove(void){
 
     CU_ASSERT_PTR_NULL(ioopm_hash_table_remove(ht,5));
 
-    // free ht?
+    ioopm_hash_table_destroy(ht);
 }
 
 int main()
