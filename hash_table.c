@@ -157,11 +157,11 @@ void itterate_over_bucket(int *counter, ioopm_entry_t *entry)
 {
   while (entry->next != NULL)
   {
-    counter++;
+    ++*counter;
     entry = entry->next;
   }
 }
-
+   
 int ioopm_hash_table_size(ioopm_hash_table_t *ht){
  int c = 0;
  for (int i = 0; i < No_Buckets; i++)
@@ -172,6 +172,29 @@ int ioopm_hash_table_size(ioopm_hash_table_t *ht){
  return c;
 }
 
+bool ioopm_hash_table_is_empty(ioopm_hash_table_t *ht)
+{
+  for (int i = 0; i < No_Buckets; ++i)
+  {
+    if (ht->buckets[i]->next != NULL) //"If there exists entries"
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+void ioopm_hash_table_clear(ioopm_hash_table_t *ht)
+{
+  for (int i = 0; i < No_Buckets; i++)              // Iterera över alla buckets
+  {
+    if(ht->buckets[i]->next != NULL){               // Om första elementet efter dummyn inte är NULL
+      bucket_destroy(ht->buckets[i]->next);
+      ht->buckets[i]->next = NULL;
+    }
+  }
+}
+/*
 int main(int argc, char *argv[])
 {
   ioopm_hash_table_t *ht = ioopm_hash_table_create();
@@ -199,6 +222,8 @@ int main(int argc, char *argv[])
   ioopm_hash_table_destroy(ht);
   return 0;
 }
+*/
+
 
 
 
