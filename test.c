@@ -147,6 +147,36 @@ void test_clear_hashtable(){
   ioopm_hash_table_destroy(ht);
 }
 
+void test_table_keys(){
+  ioopm_hash_table_t *ht = ioopm_hash_table_create();
+  int *keys = ioopm_hash_table_keys(ht);
+  CU_ASSERT_PTR_NULL(*keys);
+  ioopm_hash_table_insert(ht,10,"a");
+  free(keys);
+  keys = ioopm_hash_table_keys(ht);
+  int keys_length = sizeof(*keys) / sizeof(int);
+  CU_ASSERT(keys_length==1);
+  CU_ASSERT(*keys==10);
+  free(keys);
+  ioopm_hash_table_destroy(ht);
+}
+
+void test_table_values(){
+  ioopm_hash_table_t *ht = ioopm_hash_table_create();
+  char **values = ioopm_hash_table_values(ht);
+  CU_ASSERT_PTR_NULL(**values);
+  ioopm_hash_table_insert(ht,10,"a");
+  free(values);
+  values = ioopm_hash_table_values(ht);
+
+  //int keys_length = sizeof(*values) / sizeof(char);
+  //CU_ASSERT(keys_length==1);
+
+  CU_ASSERT(!strcmp(*values,"a"));
+  free(values);
+  ioopm_hash_table_destroy(ht);
+}
+
 int main()
 {
   CU_pSuite test_suite1 = NULL;
@@ -167,7 +197,9 @@ int main()
     (NULL == CU_add_test(test_suite1, "test 3: entry remove", test_remove)) ||
     (NULL == CU_add_test(test_suite1, "test 4: hash size", test_hashtable_size)) ||
     (NULL == CU_add_test(test_suite1, "test 5: hash table is empty", test_empty_hashtable)) ||
-    (NULL == CU_add_test(test_suite1, "test 6: hash table clear", test_clear_hashtable))
+    (NULL == CU_add_test(test_suite1, "test 6: hash table clear", test_clear_hashtable)) ||
+    (NULL == CU_add_test(test_suite1, "test 7: table keys", test_table_keys)) ||
+    (NULL == CU_add_test(test_suite1, "test 8: table values", test_table_values)) 
     )
     {
       CU_cleanup_registry();
