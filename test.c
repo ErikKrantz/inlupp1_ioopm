@@ -73,20 +73,19 @@ void test_table_insert_lookup(void)
 void test_table_lookup(void){
     ioopm_hash_table_t* ht = ioopm_hash_table_create();
     ioopm_hash_table_insert(ht,-1,"a");
-    bool *success = calloc(1, sizeof(bool));
+    bool success;
 
-    CU_ASSERT(!strcmp(ioopm_hash_table_lookup(ht,16,success), "a"));
-    CU_ASSERT(strcmp(ioopm_hash_table_lookup(ht,1, success), "a"));
-    ioopm_hash_table_lookup(ht,16, success);
-    CU_ASSERT(*success);
-    ioopm_hash_table_lookup(ht,1, success);
-    CU_ASSERT(!*success);
-    ioopm_hash_table_insert(ht,3,NULL);
-    ioopm_hash_table_lookup(ht,3, success);
-    CU_ASSERT(*success);
-    ioopm_hash_table_lookup(ht,0,success);
+    CU_ASSERT(!strcmp(ioopm_hash_table_lookup(ht,16,&success), "a"));
+    CU_ASSERT(strcmp(ioopm_hash_table_lookup(ht,1, &success), "a"));
+    ioopm_hash_table_lookup(ht,16, &success);
+    CU_ASSERT(success);
+    ioopm_hash_table_lookup(ht,1, &success);
     CU_ASSERT(!success);
-    free(success);
+    ioopm_hash_table_insert(ht,3,NULL);
+    ioopm_hash_table_lookup(ht,3, &success);
+    CU_ASSERT(success);
+    ioopm_hash_table_lookup(ht,0,&success);
+    CU_ASSERT(!success);
     ioopm_hash_table_destroy(ht);
 }
 
@@ -164,16 +163,22 @@ void test_table_keys(){
 void test_table_values(){
   ioopm_hash_table_t *ht = ioopm_hash_table_create();
   char **values = ioopm_hash_table_values(ht);
-  CU_ASSERT_PTR_NULL(**values);
-  ioopm_hash_table_insert(ht,10,"a");
+  CU_ASSERT_PTR_NULL(*values);
   free(values);
+
+  ioopm_hash_table_insert(ht,10,"b");
   values = ioopm_hash_table_values(ht);
-
-  //int keys_length = sizeof(*values) / sizeof(char);
-  //CU_ASSERT(keys_length==1);
-
-  CU_ASSERT(!strcmp(*values,"a"));
+  CU_ASSERT_STRING_EQUAL(*values, "b");
+  CU_ASSERT_PTR_NULL(values[1]);
   free(values);
+
+  ioopm_hash_table_insert(ht,9,"a");
+  values = ioopm_hash_table_values(ht);
+  CU_ASSERT_STRING_EQUAL(*values, "a");
+  CU_ASSERT_STRING_EQUAL(values[1], "b");
+  CU_ASSERT_PTR_NULL(values[2]);
+  free(values);
+
   ioopm_hash_table_destroy(ht);
 }
 

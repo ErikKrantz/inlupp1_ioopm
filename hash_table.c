@@ -67,7 +67,10 @@ static ioopm_entry_t *find_previous_entry_for_key(int key, ioopm_entry_t *cursor
     if (tmp->key == key){
       return cursor;
       }
-  cursor = cursor->next;
+    if(tmp->key > key){
+      return cursor;
+    }
+  cursor = tmp;
   tmp = cursor->next;
  }
   return cursor;
@@ -209,40 +212,41 @@ void print_array(char **pointer)
 
 void add_key(ioopm_entry_t *entry, int *adress)
 {
-  do{
-    *adress = entry->key; //add key to key-array
-    ++adress;             //step to next array index
-    entry = entry->next;  //go to next entry in bucket
-  }
-  while(entry != NULL);  
+ while (entry != NULL)
+    {
+      *adress = entry->key;
+      ++adress;
+      entry = entry->next;
+    }
 }
 
 void add_value(ioopm_entry_t *entry, char **adress)
 {
-  do{
+  while (entry != NULL)
+  {
     *adress = entry->value;
     ++adress;
     entry = entry->next;
-  }
-  while(entry != NULL);
-  // return adress;
+  }  
 }
 
 int *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
   int no_keys = ioopm_hash_table_size(ht);
   int *keys = calloc(no_keys, sizeof(int));
   int *tmp_adress = keys;
+  ioomp_entry_t *entry;
   if (no_keys==0) // empty hash table
   {
     return keys;
   } 
-  for (int i = 0; i < No_Buckets; i++) // iterate over array of buckets
-  {
-    if(ht->buckets[i]->next != NULL){ //if bucket is not empty
-      add_key(ht->buckets[i]->next, tmp_adress);
+  for (int i = 0; i < No_Buckets; i++){ // iterate over array of buckets
+     entry = ht->buckets[i]->next;
+     while (entry != NULL){
+      *tmp_adress = entry->key;
+      ++tmp_adress;
+      entry = entry->next;
     }
   }
-  *tmp_adress = 1000;
   return keys;
 }
 
@@ -253,28 +257,58 @@ char **ioopm_hash_table_values(ioopm_hash_table_t *ht){
   int no_values = ioopm_hash_table_size(ht);
   char **values = calloc(no_values+1, sizeof(char*)); //values is a pointer to the first element, which is a pointer to the first char in a string
   char **tmp_adress = values;
+  ioomp_entry_t *entry;
   if (no_values==0) // empty hash table
   {
     *tmp_adress = NULL;
     return values;
   } 
-  for (int i = 0; i < No_Buckets; i++) // iterate over array of buckets
-  {
-    if(ht->buckets[i]->next != NULL){ //if bucket is not empty
-      add_value(ht->buckets[i]->next, tmp_adress); 
-    }
+  for (int i = 0; i < No_Buckets; i++){ // iterate over array of bucket
+    entry = ht->buckets[i]->next;
+    while (entry != NULL){
+    *tmp_adress = entry->value;
+    ++tmp_adress;
+    entry = entry->next;
+    }  
   }
+  values[no_values] = NULL;
   return values;
 }
 
-
+/*
 int main(int argc, char *argv[])
 {
   ioopm_hash_table_t *ht = ioopm_hash_table_create();
   ioopm_hash_table_insert(ht, 34,"tretiofyra");
-  //ioopm_hash_table_insert(ht, 17, NULL);
   ioopm_hash_table_insert(ht,0, "noll");
+  ioopm_hash_table_insert(ht, 17, NULL);
   ioopm_hash_table_insert(ht,-17,"minus17");
+  ioopm_hash_table_insert(ht,51,"femtio1");
+  ioopm_hash_table_insert(ht,3,"tre");
+  ioopm_hash_table_insert(ht,1,"ett");
+
+  printf("%d, ",ht->buckets[1]->next->key);
+  printf("%d, ",ht->buckets[3]->next->key);
+  printf("%d, ",ht->buckets[0]->next->key);
+  printf("%d, ",ht->buckets[0]->next->next->key);
+  printf("%d, ",ht->buckets[0]->next->next->next->key);
+  printf("%d, ",ht->buckets[0]->next->next->next->next->key);
+  printf("%d\n",ht->buckets[0]->next->next->next->next->next->key);
+
+  int *testkey = ioopm_hash_table_keys(ht);
+
+  for (int i = 0; i < 7; i++)
+  {
+    printf("%d. %d\n", i+1, *testkey);
+    ++testkey;
+  }
+  
+  char **testvalues = ioopm_hash_table_values(ht);
+  for (int i = 0; i < 8; i++)
+  {
+    printf("%d. %s\n", i+1, *testvalues);
+    ++testvalues;
+  }
   //ht->buckets[3] = d;
 
   bool success;
@@ -293,37 +327,13 @@ int main(int argc, char *argv[])
   printf("%d\n", x);
 
   // TODO: Remove - testar value
-  char **testvalue = ioopm_hash_table_values(ht);
-
-
-  *testvalue = "hej";
   
   
-  
-  
-  print_array(testvalue);
-
-  printf("1. Val: %s\n", *testvalue);
-  int *testkey = ioopm_hash_table_keys(ht);
-  printf("1. Key: %d\n", *testkey);
-
-  ++testkey;
-  ++testvalue;
-  printf("2. Val: %s\n", *testvalue);
-  printf("2. Key: %d\n", *testkey);
-
-  ++testkey;
-  ++testvalue;
-  printf("3. Val: %s\n", *testvalue);
-  printf("3. Key: %d\n", *testkey);
-
   ioopm_hash_table_destroy(ht);
 
 
 
   return 0;
 }
-
-
-
+*/
 
