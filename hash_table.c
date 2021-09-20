@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include "hash_table.h"
 #define No_Buckets 17
+#define _XOPEN_SOURCE 700
 //#include <errno.h>
 
 //the types from above
@@ -64,12 +65,9 @@ static ioopm_entry_t *find_previous_entry_for_key(int key, ioopm_entry_t *cursor
   }
  while (tmp != NULL)
  {
-    if (tmp->key == key){
+    if (tmp->key == key || tmp->key > key){
       return cursor;
       }
-    if(tmp->key > key){
-      return cursor;
-    }
   cursor = tmp;
   tmp = cursor->next;
  }
@@ -210,26 +208,6 @@ void print_array(char **pointer)
   puts("]");
 }
 
-void add_key(ioopm_entry_t *entry, int *adress)
-{
- while (entry != NULL)
-    {
-      *adress = entry->key;
-      ++adress;
-      entry = entry->next;
-    }
-}
-
-void add_value(ioopm_entry_t *entry, char **adress)
-{
-  while (entry != NULL)
-  {
-    *adress = entry->value;
-    ++adress;
-    entry = entry->next;
-  }  
-}
-
 int *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
   int no_keys = ioopm_hash_table_size(ht);
   int *keys = calloc(no_keys, sizeof(int));
@@ -260,7 +238,7 @@ char **ioopm_hash_table_values(ioopm_hash_table_t *ht){
   ioomp_entry_t *entry;
   if (no_values==0) // empty hash table
   {
-    *tmp_adress = NULL;
+    *values = NULL;
     return values;
   } 
   for (int i = 0; i < No_Buckets; i++){ // iterate over array of bucket
@@ -273,6 +251,28 @@ char **ioopm_hash_table_values(ioopm_hash_table_t *ht){
   }
   values[no_values] = NULL;
   return values;
+}
+
+bool ioopm_hash_table_has_key(ioopm_hash_table_t *ht, int key){
+  bool success;
+  ioopm_hash_table_lookup(ht,key,&success);
+  return success;
+}
+
+bool ioopm_hash_table_has_value(ioopm_hash_table_t *ht, char *value){
+  char **values = ioopm_hash_table_values(ht);
+  char **adress = values;
+  while(*adress != NULL)
+  {
+    if (!strcmp(*adress,value))
+    {
+      free(values);
+      return true;
+    }
+    ++adress;
+  }
+  free(values);
+  return false;
 }
 
 /*
