@@ -12,6 +12,7 @@
 typedef struct entry ioopm_entry_t;
 typedef struct hash_table ioopm_hash_table_t;
 
+
 struct entry
 {
   int key;       // holds the key
@@ -275,7 +276,57 @@ bool ioopm_hash_table_has_value(ioopm_hash_table_t *ht, char *value){
   return false;
 }
 
-/*
+bool ioopm_hash_table_any(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg){
+  ioomp_entry_t *entry;
+  for (size_t i = 0; i < No_Buckets; i++){
+    entry  = ht->buckets[i]->next;
+    while (entry!=NULL){
+      if (pred(entry->key, entry->value, arg)){
+        return true;
+      }
+      entry = entry->next;
+    }
+  }
+  return false;
+}
+static bool key_equiv(int key, char *value_ignored, void *x)
+{
+  int *other_key_ptr = x;
+  int other_key = *other_key_ptr;
+  return key == other_key;
+}
+bool ioopm_hash_table_all(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg){
+  ioomp_entry_t *entry;
+  for (size_t i = 0; i < No_Buckets; i++){
+    entry  = ht->buckets[i]->next;
+    while (entry!=NULL){
+      if(!pred(entry->key, entry->value, arg)){
+        return false;
+      }
+      entry = entry->next;
+    }
+  }
+  return true;
+}
+void ioopm_hash_table_apply_to_all(ioopm_hash_table_t *ht, ioopm_apply_function apply_fun, void *arg){
+  ioomp_entry_t *entry;
+  char **value_p = calloc(1,sizeof(char *));
+  for (size_t i = 0; i < No_Buckets; i++){
+    entry  = ht->buckets[i]->next;
+    while (entry!=NULL){
+      *value_p = entry->value;
+      (apply_fun(entry->key, value_p, arg));
+      entry = entry->next;
+    }
+  }
+  free(value_p);
+}
+
+bool ioopm_hash_table_has_key_2(ioopm_hash_table_t *ht, int key)
+{
+  return ioopm_hash_table_any(ht, key_equiv, &key);
+}
+
 int main(int argc, char *argv[])
 {
   ioopm_hash_table_t *ht = ioopm_hash_table_create();
@@ -294,6 +345,15 @@ int main(int argc, char *argv[])
   printf("%d, ",ht->buckets[0]->next->next->next->key);
   printf("%d, ",ht->buckets[0]->next->next->next->next->key);
   printf("%d\n",ht->buckets[0]->next->next->next->next->next->key);
+
+ if(ioopm_hash_table_has_key_2(ht, 17)){
+    printf("Test has 17 key = passed");
+  }
+
+  if(!ioopm_hash_table_has_key_2(ht, 27)){
+    printf("Test has 27 key = passed");
+  }
+   
 
   int *testkey = ioopm_hash_table_keys(ht);
 
@@ -335,5 +395,5 @@ int main(int argc, char *argv[])
 
   return 0;
 }
-*/
+
 
