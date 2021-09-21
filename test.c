@@ -118,7 +118,6 @@ void test_hashtable_size(){
   CU_ASSERT(ioopm_hash_table_size(ht)==0);
   ioopm_hash_table_insert(ht,1,"a");
   int x = ioopm_hash_table_size(ht);
-  printf("%d\n", x);
   CU_ASSERT(ioopm_hash_table_size(ht)==1);
   ioopm_hash_table_insert(ht,-16,"b");
   ioopm_hash_table_insert(ht,18,"c");
@@ -150,7 +149,7 @@ void test_clear_hashtable(){
 void test_table_keys(){
   ioopm_hash_table_t *ht = ioopm_hash_table_create();
   int *keys = ioopm_hash_table_keys(ht);
-  CU_ASSERT_PTR_NULL(*keys);
+  CU_ASSERT(keys==NULL);
   ioopm_hash_table_insert(ht,10,"a");
   free(keys);
   keys = ioopm_hash_table_keys(ht);
@@ -206,8 +205,7 @@ char *ioopm_strdup(char *str)
   return result;
 }
 
-void test_has_value()
-{
+void test_has_value(){
   ioopm_hash_table_t *ht = ioopm_hash_table_create();
   bool test = ioopm_hash_table_has_value(ht,"abc");
   CU_ASSERT_FALSE(test);
@@ -227,6 +225,29 @@ void test_has_value()
   CU_ASSERT_FALSE(test);
 
   free(target);
+  ioopm_hash_table_destroy(ht);
+
+}
+
+static bool value_equiv(int key, char *value, void *x){
+  char **other_value_ptr = x;
+  char *other_value = *other_value_ptr;
+  return (strcmp(value, other_value) == 0);
+}
+
+void test_hash_table_all(){
+  ioopm_hash_table_t *ht = ioopm_hash_table_create();
+  char *test_string = "a";
+  //empty table
+  CU_ASSERT_FALSE(ioopm_hash_table_all(ht, value_equiv, &test_string));
+  //all values the same
+  ioopm_hash_table_insert(ht, 17, "a");
+  ioopm_hash_table_insert(ht, 3, "a");
+  CU_ASSERT(ioopm_hash_table_all(ht, value_equiv, &test_string));
+  //different values
+  ioopm_hash_table_insert(ht, 20, "b");
+  CU_ASSERT_FALSE(ioopm_hash_table_all(ht, value_equiv, &test_string));
+
   ioopm_hash_table_destroy(ht);
 
 }
@@ -255,7 +276,8 @@ int main()
     (NULL == CU_add_test(test_suite1, "test 7: table keys", test_table_keys)) ||
     (NULL == CU_add_test(test_suite1, "test 8: table values", test_table_values)) || 
     (NULL == CU_add_test(test_suite1, "test 9: table has key",test_has_key)) ||
-    (NULL == CU_add_test(test_suite1, "test 10: table has value", test_has_value))
+    (NULL == CU_add_test(test_suite1, "test 10: table has value", test_has_value)) ||
+    (NULL == CU_add_test(test_suite1, "test 11: hash table all",test_hash_table_all))
     )
     {
       CU_cleanup_registry();
