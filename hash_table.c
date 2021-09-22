@@ -120,6 +120,7 @@ char *ioopm_hash_table_lookup(ioopm_hash_table_t *ht, int key, bool *success){
 }
 
 static void entry_destroy(ioopm_entry_t *entry){
+    //entry = NULL;
     free(entry);
 }
 
@@ -314,8 +315,9 @@ void ioopm_hash_table_apply_to_all(ioopm_hash_table_t *ht, ioopm_apply_function 
   for (size_t i = 0; i < No_Buckets; i++){
     entry  = ht->buckets[i]->next;
     while (entry!=NULL){
-      *value_p = entry->value;
-      (apply_fun(entry->key, value_p, arg));
+      char *value_p = entry->value;
+      (apply_fun(entry->key, &value_p, arg));
+      entry->value = value_p;
       entry = entry->next;
     }
   }
