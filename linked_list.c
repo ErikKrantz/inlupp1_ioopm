@@ -30,19 +30,22 @@ ioopm_list_t *ioopm_linked_list_create(){
     return list;
 }
 
+void destroy_link (link_t *link){
+    free(link);
+    link = NULL;
+}
+
 void ioopm_linked_list_destroy(ioopm_list_t *list){
     //Just nu antar funktionen att det alltid finns en dummy
     link_t *current_link = list->first;
-    link_t *next_link = current_link->next;
-    while(next_link!=NULL){
-        current_link = NULL;
-        free(current_link);
-        current_link = next_link;
+    link_t *next_link;
+    while(current_link!=NULL){
         next_link = current_link->next;
+        destroy_link(current_link);
+        current_link = next_link;
     }
-    current_link=NULL;
-    free(current_link);
     free(list);
+    list = NULL;
 }
 
 link_t *create_link(int elem, link_t *pointer){
@@ -53,12 +56,8 @@ link_t *create_link(int elem, link_t *pointer){
     }
 
 void ioopm_linked_list_append(ioopm_list_t *list, int value){
-    link_t *last = list->last;
     link_t *new_last = create_link(value,NULL);
-    last->next = new_last;
+    list->last->next = new_last;
     list->last = new_last;
     }
 
-void main(){
-    printf("hej\n");
-}

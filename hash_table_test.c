@@ -7,10 +7,6 @@
 #include <string.h>
 #define No_Buckets 17
 
-
-typedef struct entry ioomp_entry_t;
-typedef struct hash_table ioopm_hash_table_t;
-
 struct entry
 {
   int key;       // holds the key
@@ -23,11 +19,6 @@ struct hash_table
   ioomp_entry_t *buckets[No_Buckets];
 };
 
-struct answer
-{
-  bool  success;
-  char * answer;
-};
 
 int init_suite(void)
 {
