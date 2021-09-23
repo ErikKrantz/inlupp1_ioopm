@@ -1,0 +1,90 @@
+void itterate_over_bucket(int *counter, ioopm_entry_t *entry)
+{
+  while (entry->next != NULL)
+  {
+    ++*counter;
+    entry = entry->next;
+  }
+}
+
+int ioopm_hash_table_size(ioopm_hash_table_t *ht){
+ int c = 0;
+ for (int i = 0; i < No_Buckets; i++)
+ {
+   ioopm_entry_t *first_entry = ht->buckets[i];
+   itterate_over_bucket(&c, first_entry);
+ }
+ return c;
+}
+
+
+/*
+int main(int argc, char *argv[])
+{
+  ioopm_hash_table_t *ht = ioopm_hash_table_create();
+  ioopm_hash_table_insert(ht, 34,"tretiofyra");
+  ioopm_hash_table_insert(ht,0, "noll");
+  ioopm_hash_table_insert(ht, 17, NULL);
+  ioopm_hash_table_insert(ht,-17,"minus17");
+  ioopm_hash_table_insert(ht,51,"femtio1");
+  ioopm_hash_table_insert(ht,3,"tre");
+  ioopm_hash_table_insert(ht,1,"ett");
+
+  printf("%d, ",ht->buckets[1]->next->key);
+  printf("%d, ",ht->buckets[3]->next->key);
+  printf("%d, ",ht->buckets[0]->next->key);
+  printf("%d, ",ht->buckets[0]->next->next->key);
+  printf("%d, ",ht->buckets[0]->next->next->next->key);
+  printf("%d, ",ht->buckets[0]->next->next->next->next->key);
+  printf("%d\n",ht->buckets[0]->next->next->next->next->next->key);
+
+ if(ioopm_hash_table_has_key_2(ht, 17)){
+    printf("Test has 17 key = passed");
+  }
+
+  if(!ioopm_hash_table_has_key_2(ht, 27)){
+    printf("Test has 27 key = passed");
+  }
+   
+
+  int *testkey = ioopm_hash_table_keys(ht);
+
+  for (int i = 0; i < 7; i++)
+  {
+    printf("%d. %d\n", i+1, *testkey);
+    ++testkey;
+  }
+  
+  char **testvalues = ioopm_hash_table_values(ht);
+  for (int i = 0; i < 8; i++)
+  {
+    printf("%d. %s\n", i+1, *testvalues);
+    ++testvalues;
+  }
+  //ht->buckets[3] = d;
+
+  bool success;
+  char *result = ioopm_hash_table_lookup(ht, -17, &success);
+  if (success && result != NULL){
+  printf("value = %s\n", result);
+  }
+   if (success && result==NULL){
+     printf("value = NULL\n");
+   }
+  if (!success){
+    // Här kan vi byta EINVAL (errno) till rimligt error message
+  printf("Did not find a value\n");
+  }
+  int x = ioopm_hash_table_size(ht);
+  printf("%d\n", x);
+
+  // TODO: Remove - testar value
+  
+  
+  ioopm_hash_table_destroy(ht);
+
+
+
+  return 0;
+}
+*/

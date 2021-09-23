@@ -41,7 +41,7 @@ int main()
     }
 
   if (
-    (NULL == CU_add_test(test_suite1, "test create and destroy", test_create_and_destroy)) ||
+    (NULL == CU_add_test(test_suite1, "test1: create and destroy", test_create_and_destroy)) ||
     (NULL == CU_add_test(test_suite1, "test 2", test2))
   )
     {

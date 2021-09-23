@@ -152,13 +152,17 @@ void test_table_keys(){
 
 void test_table_values(){
   ioopm_hash_table_t *ht = ioopm_hash_table_create();
+  //char *values[] = ioopm_hash_table_values(ht);
   char **values = ioopm_hash_table_values(ht);
   CU_ASSERT_PTR_NULL(*values);
   free(values);
 
   ioopm_hash_table_insert(ht,10,"b");
   values = ioopm_hash_table_values(ht);
+  //CU_ASSERT_STRING_EQUAL(values[0], "b");
   CU_ASSERT_STRING_EQUAL(*values, "b");
+  //++values;
+  //CU_ASSERT_PTR_NULL(*values)
   CU_ASSERT_PTR_NULL(values[1]);
   free(values);
 

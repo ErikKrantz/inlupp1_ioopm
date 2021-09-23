@@ -157,25 +157,6 @@ void ioopm_hash_table_destroy(ioopm_hash_table_t *ht){
   ht=NULL;
 }
 
-void itterate_over_bucket(int *counter, ioopm_entry_t *entry)
-{
-  while (entry->next != NULL)
-  {
-    ++*counter;
-    entry = entry->next;
-  }
-}
-   
-int ioopm_hash_table_size(ioopm_hash_table_t *ht){
- int c = 0;
- for (int i = 0; i < No_Buckets; i++)
- {
-   ioopm_entry_t *first_entry = ht->buckets[i];
-   itterate_over_bucket(&c, first_entry);
- }
- return c;
-}
-
 bool ioopm_hash_table_is_empty(ioopm_hash_table_t *ht)
 {
   for (int i = 0; i < No_Buckets; ++i)
@@ -197,18 +178,6 @@ void ioopm_hash_table_clear(ioopm_hash_table_t *ht)
       ht->buckets[i]->next = NULL;
     }
   }
-}
-
-// TODO: REMOVE (helper test function)
-void print_array(char **pointer)
-{
-  printf("[ ");
-  while (*pointer != NULL)
-  {
-    printf("%s ", *pointer);
-    pointer++;
-  };
-  puts("]");
 }
 
 int *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
@@ -326,6 +295,24 @@ void ioopm_hash_table_apply_to_all(ioopm_hash_table_t *ht, ioopm_apply_function 
   value_p = NULL;
 }
 
+void itterate_over_bucket(int *counter, ioopm_entry_t *entry)
+{
+  while (entry->next != NULL)
+  {
+    ++*counter;
+    entry = entry->next;
+  }
+}
+   
+int ioopm_hash_table_size(ioopm_hash_table_t *ht){
+ int c = 0;
+ for (int i = 0; i < No_Buckets; i++)
+ {
+   ioopm_entry_t *first_entry = ht->buckets[i];
+   itterate_over_bucket(&c, first_entry);
+ }
+ return c;
+}
 
 /*
 int main(int argc, char *argv[])
@@ -397,4 +384,3 @@ int main(int argc, char *argv[])
   return 0;
 }
 */
-
