@@ -21,8 +21,139 @@ void test_create_and_destroy(void)
   CU_ASSERT(true);
 }
 
-void test2(void)
+void test_append(void)
 {
+  ioopm_list_t *list = ioopm_linked_list_create();
+  //append to empty list
+  ioopm_linked_list_append(list,10);
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list, 0),10);
+  //append to list with 1 element
+  ioopm_linked_list_append(list,15);
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list, 1),15);
+
+  ioopm_linked_list_destroy(list);
+  CU_ASSERT(true);
+}
+
+void test_prepend(void)
+{
+  ioopm_list_t *list = ioopm_linked_list_create();
+  //Prepend in empty list
+  ioopm_linked_list_prepend(list,15);
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list, 0),15);
+  //Prepend to list with 1 element
+  ioopm_linked_list_prepend(list,10);
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list, 0),10);
+
+  ioopm_linked_list_destroy(list);
+  CU_ASSERT(true);
+}
+
+void test_insert(void)
+{
+  ioopm_list_t *list = ioopm_linked_list_create();
+  //insert last
+  int index=0;
+  ioopm_linked_list_insert(list,index,20); 
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list, index),20);
+  //insert first
+  ioopm_linked_list_insert(list,index,10); 
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list, index),10);
+  //insert in the middle
+  index=1;
+  ioopm_linked_list_insert(list,index,15); 
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list, index),15);
+
+  ioopm_linked_list_destroy(list);
+  CU_ASSERT(true);
+}
+
+void test_remove(void){
+  ioopm_list_t *list = ioopm_linked_list_create();
+  int index=0;
+  ioopm_linked_list_insert(list,index,20); 
+  ioopm_linked_list_insert(list,index,10);
+  index=1;  
+  ioopm_linked_list_insert(list,index,15); 
+ 
+  //remove in the middle
+  CU_ASSERT_EQUAL(ioopm_linked_list_remove(list,index),15);
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,15));
+  
+  //remove last
+  CU_ASSERT_EQUAL(ioopm_linked_list_remove(list,index),20);
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,20));
+  //remove first
+  index = 0;
+  CU_ASSERT_EQUAL(ioopm_linked_list_remove(list,index),10);
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,10));
+
+  ioopm_linked_list_destroy(list);
+}
+
+void test_get(void){
+  ioopm_list_t *list = ioopm_linked_list_create();
+  int index=0;
+  ioopm_linked_list_insert(list,index,20); 
+  ioopm_linked_list_insert(list,index,10);
+  index=1;  
+  ioopm_linked_list_insert(list,index,15); 
+  //get first value
+  index = 0;
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list,index),10);
+  //get second value
+  index = 1;
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list,index),15);
+  //get last value
+  index = 2;
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(list,index),20);
+  ioopm_linked_list_destroy(list);  
+}
+
+void test_contains(void){
+  ioopm_list_t *list = ioopm_linked_list_create();
+  //Look for value in an empty list
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,10));
+  //Look for the only value in a list, which is both first and last
+  int index=0;
+  ioopm_linked_list_insert(list,index,20);
+  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,20));
+  //Look for the first value in a list
+  ioopm_linked_list_insert(list,index,10);
+  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,10));
+  //Look for the last value in a list
+  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,20));
+  //Look for a value in the middle of a list
+  index=1;
+  ioopm_linked_list_insert(list,index,15);
+  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,15));
+  //Look for a value that does not exist
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,77));
+
+  ioopm_linked_list_destroy(list);  
+}
+
+void test_size(void){
+  CU_ASSERT(true);
+}
+
+void test_is_empty(void){
+  CU_ASSERT(true);
+}
+
+void test_clear(void){
+  CU_ASSERT(true);
+}
+
+void test_all(void){
+  CU_ASSERT(true);
+}
+
+void test_any(void){
+  CU_ASSERT(true);
+}
+
+void test_apply_to_all(void){
   CU_ASSERT(true);
 }
 
@@ -41,8 +172,19 @@ int main()
     }
 
   if (
-    (NULL == CU_add_test(test_suite1, "test1: create and destroy", test_create_and_destroy)) ||
-    (NULL == CU_add_test(test_suite1, "test 2", test2))
+    (NULL == CU_add_test(test_suite1, "test 1: create and destroy", test_create_and_destroy)) ||
+    (NULL == CU_add_test(test_suite1, "test 2: append", test_append)) ||
+    (NULL == CU_add_test(test_suite1, "test 3: prepend", test_prepend)) ||
+    (NULL == CU_add_test(test_suite1, "test 4: insert", test_insert)) ||
+    (NULL == CU_add_test(test_suite1, "test 5: remove", test_remove)) ||
+    (NULL == CU_add_test(test_suite1, "test 6: get", test_get)) ||
+    (NULL == CU_add_test(test_suite1, "test 7: contains", test_contains)) ||
+    (NULL == CU_add_test(test_suite1, "test 8: size", test_size)) ||
+    (NULL == CU_add_test(test_suite1, "test 9: is empty", test_is_empty)) ||
+    (NULL == CU_add_test(test_suite1, "test 10: clear", test_clear)) ||
+    (NULL == CU_add_test(test_suite1, "test 11: all", test_all)) ||
+    (NULL == CU_add_test(test_suite1, "test 12: any", test_any)) ||
+    (NULL == CU_add_test(test_suite1, "test 13: apply to all", test_apply_to_all)) 
   )
     {
       CU_cleanup_registry();

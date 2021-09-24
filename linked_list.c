@@ -128,6 +128,9 @@ int ioopm_linked_list_get(ioopm_list_t *list, int index){
 bool ioopm_linked_list_contains(ioopm_list_t *list, int element){
 
     link_t *link = list->first;
+    if(link->next==NULL){
+        return false;
+    }
     do{
         link = link->next;
         if (link->element == element){
@@ -166,7 +169,7 @@ void ioopm_linked_list_clear(ioopm_list_t *list){
     list->last = list->first;
 }
 
-static bool ele_exist(int element, void *x){
+static bool element_exist(int element, void *x){
   int *other_ele_ptr = x;
   int other_ele = *other_ele_ptr;
   return element == other_ele;
@@ -227,7 +230,7 @@ void ioopm_linked_apply_to_all(ioopm_list_t *list, ioopm_apply_char_function fun
     } while (current_link != NULL);
 
 }
-
+/*
 int main(){
   ioopm_list_t *list = ioopm_linked_list_create();
   if(ioopm_linked_list_is_empty(list)) printf("List is empty\n");
@@ -314,3 +317,4 @@ if(ioopm_linked_list_is_empty(list)) printf("List is empty\n");
 ioopm_linked_list_destroy(list);
   return 0;
 }
+*/
