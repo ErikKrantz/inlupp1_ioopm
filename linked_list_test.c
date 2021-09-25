@@ -133,24 +133,104 @@ void test_contains(void){
   ioopm_linked_list_destroy(list);  
 }
 
+
 void test_size(void){
-  CU_ASSERT(true);
+  ioopm_list_t *list = ioopm_linked_list_create();
+  // Test empty initialized list
+  CU_ASSERT(ioopm_linked_list_size(list) == 0);
+  
+  // Test filled list
+  ioopm_linked_list_insert(list,0,1);
+  ioopm_linked_list_insert(list,1,2);
+  ioopm_linked_list_insert(list,2,3);
+  CU_ASSERT(ioopm_linked_list_size(list) == 3);
+  
+  // Test after removing elements
+  ioopm_linked_list_remove(list,2);
+  CU_ASSERT(ioopm_linked_list_size(list) == 2);
+  
+  // Test after clearing list
+  ioopm_linked_list_clear(list)
+  CU_ASSERT(ioopm_linked_list_size(list) == 0);
 }
 
 void test_is_empty(void){
-  CU_ASSERT(true);
+  ioopm_list_t *list = ioopm_linked_list_create();
+  
+  // Test empty init list
+  CU_ASSERT(ioopm_linked_list_is_empty(list));
+  
+  // Test empty after insert
+  ioopm_linked_list_insert(list,0,1);
+  CU_ASSERT(!ioopm_linked_list_is_empty(list));
+  
+  // Test after remove
+  ioopm_linked_list_remove(list,0);
+  CU_ASSERT(ioopm_linked_list_is_empty(list));
+  
+  // Test after clear
+  ioopm_linked_list_insert(list,0,1);
+  ioopm_linked_list_insert(list,1,2);
+  ioopm_linked_list_clear(list);
+  CU_ASSERT(ioopm_linked_list_is_empty(list));
 }
 
 void test_clear(void){
-  CU_ASSERT(true);
+  ioopm_list_t *list = ioopm_linked_list_create();
+  
+  // Test clearing empty initialized list
+  ioopm_linked_list_clear(list);
+  CU_ASSERT(ioopm_linked_list_size(list) == 0);
+  
+  // Test clearing non-empty list
+  ioopm_linked_list_insert(list,0,1);
+  ioopm_linked_list_insert(list,1,2);
+  ioopm_linked_list_clear(list);
+  CU_ASSERT(ioopm_linked_list_size(list) == 0);
+  
+  // Test if first and last points to the same
+  ioopm_linked_list_insert(list,0,1);
+  ioopm_linked_list_insert(list,1,2);
+  ioopm_linked_list_clear(list);
+  /*
+  CU_ASSERT_EQUAL(list->first,list->last);  
+  */
+  
+}
+
+static bool element_exist(int element, void *x){
+  int *other_ele_ptr = x;
+  int other_ele = *other_ele_ptr;
+  return element == other_ele;
+}
+
+
+static void change_element(int *element, void *x){
+  int *other_ele_ptr = x;
+  int other_ele = *other_ele_ptr;
+  *element = other_ele;
 }
 
 void test_all(void){
-  CU_ASSERT(true);
+  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_linked_list_insert(list,0,10);
+  ioopm_linked_list_insert(list,1,20);
+  ioopm_linked_list_insert(list,1,30);
+  ioopm_linked_list_insert(list,1,40);
+  int extra = 10;
+  CU_ASSERT(!ioopm_linked_list_all(list, element_exist, &extra));
+  
+  
 }
 
 void test_any(void){
-  CU_ASSERT(true);
+  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_linked_list_insert(list,0,10);
+  ioopm_linked_list_insert(list,1,20);
+  ioopm_linked_list_insert(list,1,30);
+  ioopm_linked_list_insert(list,1,40);
+  int extra = 10;
+  CU_ASSERT(ioopm_linked_list_any(list, element_exist, &extra));
 }
 
 void test_apply_to_all(void){
