@@ -174,8 +174,8 @@ bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t element, ioopm_eq_fun
   return false;
 }
 
-int ioopm_linked_list_size(ioopm_list_t *list){
-    int c = 0;
+size_t ioopm_linked_list_size(ioopm_list_t *list){
+    size_t c = 0;
     link_t *link = list->first;
     while (link->next != NULL)
     {

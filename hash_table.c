@@ -180,8 +180,9 @@ void ioopm_hash_table_clear(ioopm_hash_table_t *ht)
   }
 }
 
+//TODO - return a linked list
 int *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
-  int no_keys = ioopm_hash_table_size(ht);
+  size_t no_keys = ioopm_hash_table_size(ht);
   int *keys = calloc(no_keys, sizeof(int));
   int *tmp_adress = keys;
   ioomp_entry_t *entry;
@@ -206,7 +207,7 @@ int *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
     Denna kan användas för M39
 */
 char **ioopm_hash_table_values(ioopm_hash_table_t *ht){
-  int no_values = ioopm_hash_table_size(ht);
+  size_t no_values = ioopm_hash_table_size(ht);
   char **values = calloc(no_values+1, sizeof(char*)); //values is a pointer to the first element, which is a pointer to the first char in a string
   char **tmp_adress = values;
   ioomp_entry_t *entry;
@@ -295,7 +296,7 @@ void ioopm_hash_table_apply_to_all(ioopm_hash_table_t *ht, ioopm_apply_function 
   value_p = NULL;
 }
 
-void itterate_over_bucket(int *counter, ioopm_entry_t *entry)
+static void itterate_over_bucket(size_t *counter, ioopm_entry_t *entry)
 {
   while (entry->next != NULL)
   {
@@ -304,16 +305,18 @@ void itterate_over_bucket(int *counter, ioopm_entry_t *entry)
   }
 }
 
-void recursion_over_bucket(int *counter, ioopm_entry_t *entry)
+/*
+static void recursion_over_bucket(size_t *counter, ioopm_entry_t *entry)
 {
   if (entry->next != NULL){
     ++*counter;
     recursion_over_bucket(counter,entry->next);
   }
 }
-   
-int ioopm_hash_table_size(ioopm_hash_table_t *ht){
- int c = 0;
+*/
+
+size_t ioopm_hash_table_size(ioopm_hash_table_t *ht){
+ size_t c = 0;
  for (int i = 0; i < No_Buckets; i++)
  {
    ioopm_entry_t *first_entry = ht->buckets[i];
