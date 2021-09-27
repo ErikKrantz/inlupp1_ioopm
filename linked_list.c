@@ -39,6 +39,20 @@ struct comparison_data
     bool found;
 };
 
+struct list_iterator
+{
+    link_t *current;
+    ioopm_list_t *list;
+};
+
+ioopm_list_iterator_t *ioopm_list_iterator(ioopm_list_t *list){
+    ioopm_list_iterator_t *iter = calloc(1,sizeof(ioopm_list_iterator_t));
+
+    iter->current = list->first;
+    iter->list = list;
+
+    return iter;
+}
 
 ioopm_list_t *ioopm_linked_list_create(){
     ioopm_list_t *list = calloc(1,sizeof(ioopm_list_t));

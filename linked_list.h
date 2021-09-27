@@ -8,13 +8,17 @@
 
 typedef union elem elem_t;
 typedef struct list ioopm_list_t;
+typedef struct list_iterator ioopm_list_iterator_t;
 
 typedef bool(*ioopm_eq_function)(elem_t a, elem_t b);
-
 typedef bool(ioopm_char_predicate)(elem_t element, void *extra);
 typedef void ioopm_apply_char_function (elem_t *element, void *extra);
 typedef void(*apply_fun_t)(elem_t element, void *data);
 
+/// @brief Create an iterator for a given list
+/// @param list the list to be iterated over
+/// @return an iteration positioned at the start of list
+ioopm_list_iterator_t *ioopm_list_iterator(ioopm_list_t *list);
 
 /// FIXME: better comments here
 /// @brief Creates a new empty list
