@@ -42,6 +42,7 @@ struct entry
 struct hash_table
 {
   ioopm_entry_t *buckets[No_Buckets];
+  hash_function *hash_function;
 
 };
 
@@ -63,7 +64,7 @@ static ioopm_entry_t *entry_create_new(elem_t key, elem_t value, ioopm_entry_t *
     return entry;
 }
 
-ioopm_hash_table_t *ioopm_hash_table_create()
+ioopm_hash_table_t *ioopm_hash_table_create(hash_function *hash_func)
 {
   /// Allocate space for a ioopm_hash_table_t_old = No_Buckets pointers to ioopm_entry_t_old's
   ioopm_hash_table_t *result = calloc(1, sizeof(ioopm_hash_table_t));
@@ -77,6 +78,7 @@ ioopm_hash_table_t *ioopm_hash_table_create()
   {
     result->buckets[i] = entry_create_new(int_elem(0),ptr_elem(NULL),NULL);
   }
+  result->hash_function = hash_func;
   return result;
 }
 
@@ -96,7 +98,7 @@ static ioopm_entry_t *find_previous_entry_for_key_new(elem_t key, ioopm_eq_funct
   }
  while (tmp != NULL)
  {
-    if ( eq_func(key, tmp->key) ){ // || tmp->key >key
+    if ( eq_func(key, tmp->key) ){ // ||tmp->key >key
       return cursor;
       }
   cursor = tmp;
@@ -131,40 +133,43 @@ static int possitve_modulo (int n, int mod){
   return n;
 }
 
-static void update_entry_value(char* value, ioopm_entry_t_old *entry, int key){
-    if(key == entry->key){ //key == cur_entry_old->key
+static void update_entry_value(elem_t value, ioopm_entry_t *entry, elem_t key, ioopm_eq_function eq_func){
+    if(eq_func(key, entry->key)){ //key == cur_entry_old->key
     entry->value = value; //ändrar value på en nyckel som finns
     }
 }
 
-void ioopm_hash_table_insert(ioopm_hash_table_t_old *ht, int key, char *value){
+void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value, ioopm_eq_function eq_func){
   /// Calculate the bucket for this entry
-  int bucket = possitve_modulo(key, No_Buckets);
+  hash_function *hash_func = ht->hash_function;
+  int bucket = possitve_modulo((*hash_func)(key), No_Buckets);
 
-  ioopm_entry_t_old *pre_entry = find_previous_entry_for_key(key, ht->buckets[bucket]);//en av två alternativ, kopia vs adress
-  ioopm_entry_t_old *cur_entry;
+  ioopm_entry_t *pre_entry = find_previous_entry_for_key_new(key, eq_func, ht->buckets[bucket]);//en av två alternativ, kopia vs adress
+  ioopm_entry_t *cur_entry;
 
   if(pre_entry->next != NULL){ //"om vi inte är i slutet av listan, alltså finns nyckeln"
-    update_entry_value(value, pre_entry->next, key);
+    update_entry_value(value, pre_entry->next, key, eq_func);
   }
-  cur_entry = entry_create(key,value,pre_entry->next); //
+  cur_entry = entry_create_new(key,value,pre_entry->next); //
   pre_entry->next = cur_entry;
 }
 
-char *ioopm_hash_table_lookup(ioopm_hash_table_t_old *ht, int key, bool *success){
+elem_t ioopm_hash_table_lookup(ioopm_hash_table_t *ht, elem_t key, ioopm_eq_function eq_func, bool *success){
+  hash_function *hash_func = ht->hash_function;
+  int bucket = possitve_modulo((*hash_func)(key), No_Buckets);
   /// Find the previous entry for key
-  ioopm_entry_t_old *tmp = find_previous_entry_for_key(key,ht->buckets[key % No_Buckets]);
-  ioopm_entry_t_old *next = tmp->next;
+  ioopm_entry_t *tmp = find_previous_entry_for_key_new(key, eq_func,ht->buckets[bucket]);
+  ioopm_entry_t *next = tmp->next;
   if (next != NULL)
   {
-    if(next->key == key)
+    if(eq_func(next->key, key))
    {
     *success = true;
     return next->value;
    }
   }
   *success = false;
-  return NULL;
+  return ptr_elem(NULL);
 }
 
 static void entry_destroy(ioopm_entry_t_old *entry){
@@ -172,32 +177,41 @@ static void entry_destroy(ioopm_entry_t_old *entry){
     entry=NULL;
 }
 
-char *ioopm_hash_table_remove(ioopm_hash_table_t_old *ht, int key){
-  ioopm_entry_t_old *pre_entry= find_previous_entry_for_key(key,ht->buckets[possitve_modulo(key, No_Buckets)]);
-  ioopm_entry_t_old *delete_entry = pre_entry->next;
+static void entry_destroy_new(ioopm_entry_t *entry){
+    free(entry);
+    entry=NULL;
+}
+
+//TODO: felmeddelande om vi vill remova något som inte finns
+elem_t ioopm_hash_table_remove(ioopm_hash_table_t *ht, elem_t key, ioopm_eq_function eq_func){
+  hash_function *hash_func = ht->hash_function;
+  int bucket = possitve_modulo((*hash_func)(key), No_Buckets);
+
+  ioopm_entry_t *pre_entry= find_previous_entry_for_key_new(key, eq_func,ht->buckets[bucket]);
+  ioopm_entry_t *delete_entry = pre_entry->next;
   if(delete_entry ==NULL){
-    return NULL;
+    return ptr_elem(NULL);
   }
-  ioopm_entry_t_old *next_entry = delete_entry->next;
+  ioopm_entry_t *next_entry = delete_entry->next;
   pre_entry->next = next_entry; // uppdaterar next i pre_entry
-  char *value_deleted = delete_entry->value;
-  entry_destroy(delete_entry); // Kanske behövs mer free för (value/key/next)
+  elem_t value_deleted = delete_entry->value;
+  entry_destroy_new(delete_entry); // Kanske behövs mer free för (value/key/next)
   return value_deleted;
 }
 
-static void bucket_destroy(ioopm_entry_t_old *current_entry)
+static void bucket_destroy(ioopm_entry_t *current_entry)
 {
-  ioopm_entry_t_old *next_entry;
+  ioopm_entry_t *next_entry;
    while (current_entry->next != NULL)
  {
    next_entry = current_entry->next;
-   entry_destroy(current_entry);
+   entry_destroy_new(current_entry);
    current_entry = next_entry;
  }
- entry_destroy(current_entry);
+ entry_destroy_new(current_entry);
 }
 
-void ioopm_hash_table_destroy(ioopm_hash_table_t_old *ht){
+void ioopm_hash_table_destroy(ioopm_hash_table_t *ht){
   for(int i = 0; i<No_Buckets; ++i){
     bucket_destroy(ht->buckets[i]);
   }
@@ -205,7 +219,7 @@ void ioopm_hash_table_destroy(ioopm_hash_table_t_old *ht){
   ht=NULL;
 }
 
-bool ioopm_hash_table_is_empty(ioopm_hash_table_t_old *ht)
+bool ioopm_hash_table_is_empty(ioopm_hash_table_t *ht)
 {
   for (int i = 0; i < No_Buckets; ++i)
   {
@@ -217,7 +231,7 @@ bool ioopm_hash_table_is_empty(ioopm_hash_table_t_old *ht)
   return true;
 }
 
-void ioopm_hash_table_clear(ioopm_hash_table_t_old *ht)
+void ioopm_hash_table_clear(ioopm_hash_table_t *ht)
 {
   for (int i = 0; i < No_Buckets; i++)              // Iterera över alla buckets
   {
@@ -228,7 +242,7 @@ void ioopm_hash_table_clear(ioopm_hash_table_t_old *ht)
   }
 }
 
-static void itterate_over_bucket(size_t *counter, ioopm_entry_t_old *entry)
+static void itterate_over_bucket(size_t *counter, ioopm_entry_t *entry)
 {
   while (entry->next != NULL)
   {
@@ -237,15 +251,16 @@ static void itterate_over_bucket(size_t *counter, ioopm_entry_t_old *entry)
   }
 }
 
-size_t ioopm_hash_table_size(ioopm_hash_table_t_old *ht){
+size_t ioopm_hash_table_size(ioopm_hash_table_t *ht){
  size_t c = 0;
  for (int i = 0; i < No_Buckets; i++)
  {
-   ioopm_entry_t_old *first_entry = ht->buckets[i];
+   ioopm_entry_t *first_entry = ht->buckets[i];
    itterate_over_bucket(&c, first_entry);
  }
  return c;
 }
+/*
 //TODO - return a linked list
 int *ioopm_hash_table_keys(ioopm_hash_table_t_old *ht){
   size_t no_keys = ioopm_hash_table_size(ht);
@@ -269,9 +284,8 @@ int *ioopm_hash_table_keys(ioopm_hash_table_t_old *ht){
   return keys;
 }
 
-/*
-    Denna kan användas för M39
-*/
+
+// Denna kan användas för M39
 char **ioopm_hash_table_values(ioopm_hash_table_t_old *ht){
   size_t no_values = ioopm_hash_table_size(ht);
   char **values = calloc(no_values+1, sizeof(char*)); //values is a pointer to the first element, which is a pointer to the first char in a string
@@ -292,7 +306,7 @@ char **ioopm_hash_table_values(ioopm_hash_table_t_old *ht){
   }
   values[no_values] = NULL;
   return values;
-}
+}*/
 static bool key_equiv(int key, char *value_ignored, void *x){
   int *other_key_ptr = x;
   int other_key = *other_key_ptr;
@@ -309,8 +323,8 @@ static bool value_equiv(int key, char *value, void *x){
 
 
 
-bool ioopm_hash_table_any(ioopm_hash_table_t_old *ht, ioopm_predicate pred, void *arg){
-  ioopm_entry_t_old *entry; 
+bool ioopm_hash_table_any(ioopm_hash_table_t *ht, ioopm_predicate_new pred, void *arg){
+  ioopm_entry_t *entry; 
   //kanske bättre prestanda att kolla empty_table först
   for (size_t i = 0; i < No_Buckets; i++){
     entry = ht->buckets[i]->next;
@@ -325,10 +339,10 @@ bool ioopm_hash_table_any(ioopm_hash_table_t_old *ht, ioopm_predicate pred, void
 }
 
 bool ioopm_hash_table_all(ioopm_hash_table_t_old *ht, ioopm_predicate pred, void *arg){
-  ioopm_entry_t_old *entry;
+  ioopm_entry_t_old *entry;/*
   if(ioopm_hash_table_is_empty(ht)){
     return false;
-  } 
+  } */
   for (size_t i = 0; i < No_Buckets; i++){
     entry  = ht->buckets[i]->next;
     while (entry!=NULL){
@@ -340,7 +354,7 @@ bool ioopm_hash_table_all(ioopm_hash_table_t_old *ht, ioopm_predicate pred, void
   }
   return true;
 }
-
+/*
 bool ioopm_hash_table_has_value(ioopm_hash_table_t_old *ht, char *value){
   return ioopm_hash_table_any(ht, value_equiv, &value);
 }
@@ -348,7 +362,7 @@ bool ioopm_hash_table_has_value(ioopm_hash_table_t_old *ht, char *value){
 bool ioopm_hash_table_has_key(ioopm_hash_table_t_old *ht, int key)
 {
   return ioopm_hash_table_any(ht, key_equiv, &key);
-}
+}*/
 
 void ioopm_hash_table_apply_to_all(ioopm_hash_table_t_old *ht, ioopm_apply_function apply_fun, void *arg){
   ioopm_entry_t_old *entry;
