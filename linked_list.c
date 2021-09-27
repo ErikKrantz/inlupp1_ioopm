@@ -5,10 +5,20 @@
 #include <ctype.h>
 #include "linked_list.h"
 
-typedef int elem_t;
-typedef struct link link_t; /// Meta: struct definition goes in C file
 
-struct link 
+typedef struct link link_t;
+
+union elem
+{
+  /// TODO: update the names of the fields to something better? 
+  int i;
+  unsigned int u;
+  bool b;
+  float f;
+  void *p;
+};
+
+struct link
 {
     elem_t element;
     link_t *next;
@@ -16,21 +26,30 @@ struct link
 
 struct list
 {
-  link_t *first;
-  link_t *last;
+    link_t *first;
+    link_t *last;
+    ioopm_eq_function *eq_fun;
+    int size;
 };
+
+struct comparison_data
+{
+    elem_t element;
+    ioopm_eq_function eq_fun;
+    bool found;
+};
+
 
 ioopm_list_t *ioopm_linked_list_create(){
     ioopm_list_t *list = calloc(1,sizeof(ioopm_list_t));
     link_t *dummy = calloc(1,sizeof(link_t));
-    dummy->element = 0;
-    dummy->next = NULL;
     list->first = dummy;
     list->last = dummy;
+    list->size = 0;
     return list;
 }
 
-void destroy_link (link_t *link){
+static void destroy_link (link_t *link){
     free(link);
     link = NULL;
 }
@@ -48,25 +67,27 @@ void ioopm_linked_list_destroy(ioopm_list_t *list){
     list = NULL;
 }
 
-link_t *create_link(int elem, link_t *pointer){
+static link_t *create_link(elem_t elem, link_t *pointer){
     link_t *entry = calloc(1,sizeof(link_t));
     entry->element = elem;
     entry->next = pointer;
     return entry;
     }
 
-void ioopm_linked_list_append(ioopm_list_t *list, int value){
+void ioopm_linked_list_append(ioopm_list_t *list, elem_t value){
     link_t *new_last = create_link(value,NULL);
     list->last->next = new_last;
     list->last = new_last;
+    list->size +=1;
     }
 
-void ioopm_linked_list_prepend(ioopm_list_t *list, int value){
+void ioopm_linked_list_prepend(ioopm_list_t *list, elem_t value){
     link_t *first_link = create_link(value,list->first->next); //first element is dummy
     list->first->next = first_link;
     if(first_link->next==NULL){ //om vi lägger till ett link först i en tom lista blir den också sist
         list->last = first_link;
     }
+    list->size +=1;
 }
 
 // find_prev_link antar ett korrekt index
@@ -77,11 +98,12 @@ static link_t *find_previous_link(ioopm_list_t *list, int index){
     }
     return pre_link;
 }
+
 //funktionen antar ett correct index
-void ioopm_linked_list_insert(ioopm_list_t *list, int index, int value){
+void ioopm_linked_list_insert(ioopm_list_t *list, int index, elem_t value){
    
     link_t *pre_link = find_previous_link(list,index);
-
+    list->size +=1;
     if(pre_link->next == NULL){ //ifall vi ska lägga till en link sist i listan
         ioopm_linked_list_append(list,value);
         return;
@@ -90,16 +112,19 @@ void ioopm_linked_list_insert(ioopm_list_t *list, int index, int value){
     pre_link->next = new_link;
 }
 
-int ioopm_linked_list_remove(ioopm_list_t *list, int index){
+elem_t ioopm_linked_list_remove(ioopm_list_t *list, int index){
     link_t *pre_link = find_previous_link(list, index);
 
     // hitta linken som ska tas bort
     link_t *remove_link = pre_link->next;
+
+    list->size -=1;
+
     // kolla ifall remove link är last
     if (remove_link->next==NULL){
         list->last = pre_link;   
         pre_link->next = NULL;
-        int value = remove_link->element;
+        elem_t value = remove_link->element;
         destroy_link(remove_link);
         return value;
     }
@@ -107,7 +132,7 @@ int ioopm_linked_list_remove(ioopm_list_t *list, int index){
     // ersätt länken innans next med den
     pre_link->next = remove_link->next;
 
-    int value = remove_link->element;
+    elem_t value = remove_link->element;
 
     // destroy the link
     destroy_link(remove_link);
@@ -117,27 +142,22 @@ int ioopm_linked_list_remove(ioopm_list_t *list, int index){
 }
 
 // Only accepts valid indexes
-int ioopm_linked_list_get(ioopm_list_t *list, int index){
+elem_t ioopm_linked_list_get(ioopm_list_t *list, int index){
     link_t *pre_link = find_previous_link(list, index);
 
-    int element = pre_link->next->element;
+    elem_t element = pre_link->next->element;
 
     return element;
 }
 
-bool ioopm_linked_list_contains(ioopm_list_t *list, int element){
-
-    link_t *link = list->first;
-    if(link->next==NULL){
-        return false;
+bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t element, ioopm_eq_function cmp)
+{
+  for (link_t *cursor = list->first->next; cursor; cursor = cursor->next)
+    {
+      if (cmp(cursor->element, element)) return true;
     }
-    do{
-        link = link->next;
-        if (link->element == element){
-            return true;
-        }
-    }while (link->next != NULL);
-    return false;
+
+  return false;
 }
 
 int ioopm_linked_list_size(ioopm_list_t *list){
@@ -168,7 +188,7 @@ void ioopm_linked_list_clear(ioopm_list_t *list){
     list->first->next = NULL;
     list->last = list->first;
 }
-
+/*
 static bool element_exist(int element, void *x){
   int *other_ele_ptr = x;
   int other_ele = *other_ele_ptr;
@@ -180,7 +200,9 @@ static void change_element (int *element, void *x){
   int *other_ele_ptr = x;
   int other_ele = *other_ele_ptr;
   *element = other_ele;
-}
+}*/
+
+
 
 bool ioopm_linked_list_all(ioopm_list_t *list, ioopm_char_predicate prop, void *extra){
     
@@ -216,6 +238,13 @@ bool ioopm_linked_list_any(ioopm_list_t *list, ioopm_char_predicate prop, void *
     return false;
 }
 
+void find_element(elem_t element, struct comparison_data *data){
+    if(!(data->found) && data->eq_fun(element, data->element) == 0)
+    {
+        data->found = true;
+    }
+}
+
 void ioopm_linked_apply_to_all(ioopm_list_t *list, ioopm_apply_char_function fun, void *extra){
     if (ioopm_linked_list_is_empty(list)) {
         return;
@@ -230,31 +259,51 @@ void ioopm_linked_apply_to_all(ioopm_list_t *list, ioopm_apply_char_function fun
     } while (current_link != NULL);
 
 }
+
+void apply_to_all(ioopm_list_t *list, apply_fun_t func, void *extra){
+    for (link_t *cursor = list->first->next; cursor; cursor = cursor->next)
+    {
+        func(cursor->element, extra);
+    }
+}
+
+bool list_contains(ioopm_list_t *list, elem_t element, ioopm_eq_function eq_fun){
+    struct comparison_data c_d = { .element = element, .eq_fun = eq_fun, .found = false};
+
+    apply_to_all(list, (apply_fun_t) find_element, &c_d);
+
+    return c_d.found;
+}
+
+int list_size(ioopm_list_t *list){
+    return list->size;
+}
+
 /*
 int main(){
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t_old *list = ioopm_linked_list_create();
   if(ioopm_linked_list_is_empty(list)) printf("List is empty\n");
   ioopm_linked_list_append(list,4);
-  if(list->last->element == 4){
+  if(list_old->last->element == 4){
       printf("Success append!\n");
   }
 
   ioopm_linked_list_prepend(list,3);
-  if(list->first->next->element == 3){
+  if(list_old->first->next->element == 3){
       printf("Success prepend!\n");
   }
 
   ioopm_linked_list_insert(list,0,1);
-  if(list->first->next->element == 1){
+  if(list_old->first->next->element == 1){
       printf("Success insert first!\n");
   }
   ioopm_linked_list_insert(list,1,2);
-  if(list->first->next->next->element == 2){
+  if(list_old->first->next->next->element == 2){
       printf("Success insert middle!\n");
   }
   
   ioopm_linked_list_insert(list,4,15);
-  if(list->last->element == 15){
+  if(list_old->last->element == 15){
       printf("Success insert last!\n");
   }
   
@@ -263,7 +312,7 @@ int main(){
 
   printf("%d\n", value_removed);
 
-  if(list->last->element != 15)
+  if(list_old->last->element != 15)
 {
     puts("Successfullt removed last");
 }
@@ -293,16 +342,16 @@ if (any_test){
 }
 
 ioopm_linked_apply_to_all(list,change_element,&ele);
-int x = list->first->next->element;
+int x = list_old->first->next->element;
 printf("%d\n",x);
 
-x = list->first->next->next->element;
+x = list_old->first->next->next->element;
 printf("%d\n",x);
 
-x = list->first->next->next->next->element;
+x = list_old->first->next->next->next->element;
 printf("%d\n",x);
 
-x = list->first->next->next->next->next->element;
+x = list_old->first->next->next->next->next->element;
 
 printf("%d\n",x);
 bool all_test = ioopm_linked_list_all(list,ele_exist, &ele);

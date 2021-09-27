@@ -303,6 +303,14 @@ void itterate_over_bucket(int *counter, ioopm_entry_t *entry)
     entry = entry->next;
   }
 }
+
+void recursion_over_bucket(int *counter, ioopm_entry_t *entry)
+{
+  if (entry->next != NULL){
+    ++*counter;
+    recursion_over_bucket(counter,entry->next);
+  }
+}
    
 int ioopm_hash_table_size(ioopm_hash_table_t *ht){
  int c = 0;
