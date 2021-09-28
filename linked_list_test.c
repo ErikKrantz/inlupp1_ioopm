@@ -33,7 +33,6 @@ void test_create_and_destroy(void)
 {
   ioopm_list_t *list = ioopm_linked_list_create();
   ioopm_linked_list_destroy(list);
-  CU_ASSERT(true);
 }
 
 void test_append(void)

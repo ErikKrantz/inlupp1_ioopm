@@ -27,18 +27,20 @@ typedef union elem elem_t;
 typedef struct entry ioopm_entry_t;
 typedef struct hash_table ioopm_hash_table_t;
 
+//Returns an index for a given key
+typedef int(*hash_function)(elem_t a);
+
 typedef bool(*ioopm_eq_function)(elem_t a, elem_t b);
-typedef bool(*ioopm_predicate)(elem_t key, elem_t value, void *extra, ioopm_eq_function eq_func);
+typedef bool(*ioopm_predicate)(elem_t key, elem_t value, void *extra, ioopm_eq_function elem_cmp, hash_function hash_func);
 typedef void(*ioopm_apply_function)(elem_t key, elem_t *value, void *extra); // change int char -> elem
 
 
-typedef int(*hash_function)(elem_t a);
 
 
 
 //@brief Create a new hash table
 //@return A new empty hash table
-ioopm_hash_table_t *ioopm_hash_table_create();
+ioopm_hash_table_t *ioopm_hash_table_create(hash_function *hash_func, ioopm_eq_function *elem_cmp);
 
 //@brief Delete a hash table and free its memory
 //@param ht a hash table to be deleted
@@ -48,19 +50,19 @@ void ioopm_hash_table_destroy(ioopm_hash_table_t *ht);
 //@param ht hash table operated upon
 //@param key key to insert
 //@param value value to insert
-void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value, ioopm_eq_function eq_func);
+void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value);
 
 //@brief lookup value for key in hash table ht
 //@param ht hash table operated upon
 //@param key key to lookup
 //@return the value mapped to by key (FIXME: incomplete)
-elem_t ioopm_hash_table_lookup(ioopm_hash_table_t *ht, elem_t key, ioopm_eq_function eq_func, bool *success);
+elem_t ioopm_hash_table_lookup(ioopm_hash_table_t *ht, elem_t key, bool *success);
 
 //@brief remove any mapping from key to a value
 //@param ht hash table operated upon
 //@param key key to remove
 //@return the value mapped to by key (FIXME: incomplete)
-elem_t ioopm_hash_table_remove(ioopm_hash_table_t *ht, elem_t key, ioopm_eq_function eq_func);
+elem_t ioopm_hash_table_remove(ioopm_hash_table_t *ht, elem_t key);
 
 /// @brief returns the number of key => value entries in the hash table
 /// @param h hash table operated upon
@@ -89,24 +91,24 @@ ioopm_list_t *ioopm_hash_table_values(ioopm_hash_table_t *ht);
 /// @brief check if a hash table has an entry with a given key
 /// @param h hash table operated upon
 /// @param key the key sought
-bool ioopm_hash_table_has_key(ioopm_hash_table_t *ht, elem_t key, ioopm_eq_function eq_func);
+bool ioopm_hash_table_has_key(ioopm_hash_table_t *ht, elem_t key);
 
 /// @brief check if a hash table has an entry with a given value
 /// @param h hash table operated upon
 /// @param value the value sought
-bool ioopm_hash_table_has_value(ioopm_hash_table_t *ht, elem_t value, ioopm_eq_function eq_func);
+bool ioopm_hash_table_has_value(ioopm_hash_table_t *ht, elem_t value);
 
 /// @brief check if a predicate is satisfied by all entries in a hash table
 /// @param h hash table operated upon
 /// @param pred the predicate
 /// @param arg extra argument to pred
-bool ioopm_hash_table_all(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg, ioopm_eq_function eq_func);
+bool ioopm_hash_table_all(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg);
 
 /// @brief check if a predicate is satisfied by any entry in a hash table
 /// @param h hash table operated upon
 /// @param pred the predicate
 /// @param arg extra argument to pred
-bool ioopm_hash_table_any(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg, ioopm_eq_function eq_func);
+bool ioopm_hash_table_any(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg);
 
 /// @brief apply a function to all entries in a hash table
 /// @param h hash table operated upon

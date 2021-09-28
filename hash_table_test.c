@@ -7,18 +7,6 @@
 #include <string.h>
 #define No_Buckets 17
 
-struct entry_old
-{
-  int key;       // holds the key
-  char *value;   // holds the value
-  ioopm_entry_t_old *next; // points to the next entry (possibly NULL)
-};
-
-struct hash_table_old
-{
-  ioopm_entry_t_old *buckets[No_Buckets];
-};
-
 
 int init_suite(void)
 {
@@ -30,15 +18,12 @@ int clean_suite(void)
   return 0;
 }
 
-void test_table_create(void)
+void test_create_and_destroy(void)
 {
-  ioopm_hash_table_t_old* ht = ioopm_hash_table_create();
-  int key = 18;
-  CU_ASSERT(ht->buckets[key%No_Buckets]->key == 0);
-  CU_ASSERT(true);
+  ioopm_hash_table_t* ht = ioopm_hash_table_create();
   ioopm_hash_table_destroy(ht);
 }
-
+/*
 void test_table_insert_lookup(void)
 {
     ioopm_hash_table_t_old* ht = ioopm_hash_table_create();
@@ -266,7 +251,7 @@ void test_hash_apply_to_all(){
 
   ioopm_hash_table_destroy(ht);
 }
-
+*/
 int main()
 {
   CU_pSuite test_suite1 = NULL;
@@ -282,18 +267,18 @@ int main()
     }
 
   if (
-    (NULL == CU_add_test(test_suite1, "test 1: table create", test_table_create)) ||
-    (NULL == CU_add_test(test_suite1, "test 2: insert", test_table_insert_lookup)) ||
-    (NULL == CU_add_test(test_suite1, "test 3: entry remove", test_remove)) ||
-    (NULL == CU_add_test(test_suite1, "test 4: hash size", test_hashtable_size)) ||
-    (NULL == CU_add_test(test_suite1, "test 5: hash table is empty", test_empty_hashtable)) ||
-    (NULL == CU_add_test(test_suite1, "test 6: hash table clear", test_clear_hashtable)) ||
-    (NULL == CU_add_test(test_suite1, "test 7: table keys", test_table_keys)) ||
-    (NULL == CU_add_test(test_suite1, "test 8: table values", test_table_values)) || 
-    (NULL == CU_add_test(test_suite1, "test 9: table has key",test_has_key)) ||
-    (NULL == CU_add_test(test_suite1, "test 10: table has value", test_has_value)) ||
-    (NULL == CU_add_test(test_suite1, "test 11: hash table all",test_hash_table_all)) ||
-    (NULL == CU_add_test(test_suite1, "test 12: hash table apply all",test_hash_apply_to_all))
+    (NULL == CU_add_test(test_suite1, "test 1: table create and destroy", test_create_and_destroy))
+    (NULL == CU_add_test(test_suite1, "test 2: insert", test_table_insert_lookup))
+    //(NULL == CU_add_test(test_suite1, "test 3: entry remove", test_remove)) ||
+    //(NULL == CU_add_test(test_suite1, "test 4: hash size", test_hashtable_size)) ||
+//    (NULL == CU_add_test(test_suite1, "test 5: hash table is empty", test_empty_hashtable)) ||
+  //  (NULL == CU_add_test(test_suite1, "test 6: hash table clear", test_clear_hashtable)) ||
+    //(NULL == CU_add_test(test_suite1, "test 7: table keys", test_table_keys)) ||
+//    (NULL == CU_add_test(test_suite1, "test 8: table values", test_table_values)) || 
+  //  (NULL == CU_add_test(test_suite1, "test 9: table has key",test_has_key)) ||
+    //(NULL == CU_add_test(test_suite1, "test 10: table has value", test_has_value)) ||
+//    (NULL == CU_add_test(test_suite1, "test 11: hash table all",test_hash_table_all)) ||
+  //  (NULL == CU_add_test(test_suite1, "test 12: hash table apply all",test_hash_apply_to_all))
     )
     {
       CU_cleanup_registry();

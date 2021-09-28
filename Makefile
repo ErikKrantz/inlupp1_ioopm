@@ -27,8 +27,8 @@ gdb_hash: hash_table.c
 gdb_linked: linked_list.c
 	$(C_GDB_TEST) linked_list.c -o gdb_linked
 
-test_hash: hash_table.c hash_table_test.c
-	$(C_UNIT_TEST) hash_table.c hash_table_test.c -o test_hash -lcunit
+test_hash: hash_table.c linked_list.c hash_table_test.c
+	$(C_UNIT_TEST) hash_table.c linked_list.c hash_table_test.c -o test_hash -lcunit
 
 test_linked: linked_list.c linked_list_test.c
 	$(C_UNIT_TEST) linked_list.c linked_list_test.c -o test_linked -lcunit
