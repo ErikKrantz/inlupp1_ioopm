@@ -7,6 +7,8 @@
 #define uns_int_elem(x) (elem_t) { .u=(x) }
 #define bool_elem(x) (elem_t) { .b=(x) }
 #define float_elem(x) (elem_t) { .f=(x) }
+//#define char_elem(x) (elem_t) { .c=(x) }
+#define str_elem(x) (elem_t) { .s=(x) }
 
 /*
  * @file hash_table.h
@@ -32,15 +34,14 @@ typedef int(*hash_function)(elem_t a);
 
 typedef bool(*ioopm_eq_function)(elem_t a, elem_t b);
 typedef bool(*ioopm_predicate)(elem_t key, elem_t value, void *extra, ioopm_eq_function elem_cmp, hash_function hash_func);
-typedef void(*ioopm_apply_function)(elem_t key, elem_t *value, void *extra); // change int char -> elem
-
+typedef void(*ioopm_apply_function)(elem_t key, elem_t *value, void *extra);
 
 
 
 
 //@brief Create a new hash table
 //@return A new empty hash table
-ioopm_hash_table_t *ioopm_hash_table_create(hash_function *hash_func, ioopm_eq_function *elem_cmp);
+ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function elem_cmp); // TO CHECK *hash_func *elem_cmp or no ptrs
 
 //@brief Delete a hash table and free its memory
 //@param ht a hash table to be deleted
