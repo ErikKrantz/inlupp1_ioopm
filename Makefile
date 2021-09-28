@@ -12,8 +12,8 @@ C_VALGRIND     = valgrind --leak-check=full
 %.o:  %.c
 	$(C_COMPILER) $(C_OPTIONS) $? -c
 
-runhash: hash_table.c
-	$(C_COMPILER) $(C_LINK_OPTIONS) hash_table.c -o runhash
+runhash: hash_table.c linked_list.c
+	$(C_COMPILER) $(C_LINK_OPTIONS) hash_table.c linked_list.c -o runhash
 
 runlinked: linked_list.c
 	$(C_COMPILER) $(C_LINK_OPTIONS) linked_list.c -o runlinked
