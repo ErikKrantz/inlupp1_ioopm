@@ -29,15 +29,16 @@ bool compare_int_elements(elem_t a, elem_t b)
   return (0 == b.i - a.i);
 }
 
+
 void test_create_and_destroy(void)
 {
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   ioopm_linked_list_destroy(list);
 }
 
 void test_append(void)
 {
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   //append to empty list
   
   ioopm_linked_list_append(list,int_elem(10));
@@ -52,7 +53,7 @@ void test_append(void)
 
 void test_prepend(void)
 {
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   //Prepend in empty list
   ioopm_linked_list_prepend(list,int_elem(15));
   CU_ASSERT(compare_int_elements(ioopm_linked_list_get(list, 0),int_elem(15)));
@@ -66,7 +67,7 @@ void test_prepend(void)
 
 void test_insert(void)
 {
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   //insert last
   int index=0;
   ioopm_linked_list_insert(list,index,int_elem(10)); 
@@ -84,7 +85,7 @@ void test_insert(void)
 }
 
 void test_remove(void){
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   int index=0;
   ioopm_linked_list_insert(list,index,int_elem(20)); 
   ioopm_linked_list_insert(list,index,int_elem(15));
@@ -93,22 +94,22 @@ void test_remove(void){
   //remove in the middle
   index = 1;
   CU_ASSERT(compare_int_elements(ioopm_linked_list_remove(list, index),int_elem(15)));
-  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(15), compare_int_elements));
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(15)));
   
   //remove last
   CU_ASSERT(compare_int_elements(ioopm_linked_list_remove(list, index),int_elem(20)));
-  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(20), compare_int_elements));
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(20)));
 
   //remove first
   index = 0;
   CU_ASSERT(compare_int_elements(ioopm_linked_list_remove(list, index),int_elem(10)));
-  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(10), compare_int_elements));
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(10)));
 
   ioopm_linked_list_destroy(list);
 }
 
 void test_get(void){
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   int index=0;
   ioopm_linked_list_insert(list,index,int_elem(20)); 
   ioopm_linked_list_insert(list,index,int_elem(10));
@@ -127,24 +128,24 @@ void test_get(void){
 }
 
 void test_contains(void){
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   //Look for value in an empty list
-  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(10), compare_int_elements));
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(10)));
   //Look for the only value in a list, which is both first and last
   int index=0;
   ioopm_linked_list_insert(list,index,int_elem(20));
-  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,int_elem(20), compare_int_elements));
+  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,int_elem(20)));
   //Look for the first value in a list
   ioopm_linked_list_insert(list,index,int_elem(10));
-  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,int_elem(10), compare_int_elements));
+  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,int_elem(10)));
   //Look for the last value in a list
-  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,int_elem(20), compare_int_elements));
+  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,int_elem(20)));
   //Look for a value in the middle of a list
   index=1;
   ioopm_linked_list_insert(list,index,int_elem(15));
-  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,int_elem(15), compare_int_elements));
+  CU_ASSERT_TRUE(ioopm_linked_list_contains(list,int_elem(15)));
   //Look for a value that does not exist
-  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(77), compare_int_elements));
+  CU_ASSERT_FALSE(ioopm_linked_list_contains(list,int_elem(77)));
 
   ioopm_linked_list_destroy(list);  
 }
@@ -152,7 +153,7 @@ void test_contains(void){
 
 void test_size(void){
   
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   // Test empty initialized list
   CU_ASSERT_EQUAL(ioopm_linked_list_size(list), 0);
   
@@ -177,7 +178,7 @@ void test_size(void){
 
 void test_is_empty(void){
   
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   
   // Test empty init list
   CU_ASSERT(ioopm_linked_list_is_empty(list));
@@ -200,7 +201,7 @@ void test_is_empty(void){
 
 void test_clear(void){
   
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   
   // Test clearing empty initialized list
   ioopm_linked_list_clear(list);
@@ -238,7 +239,7 @@ static void change_element_int(elem_t *element, void *x){
 
 void test_all(void){
   
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   //Test empty list 
   int extra = 10;
   CU_ASSERT_FALSE(ioopm_linked_list_all(list, element_exist_int, &extra));
@@ -259,7 +260,7 @@ void test_all(void){
 
 void test_any(void){
   
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   //Test an empty list
   int extra = 10;
   CU_ASSERT_FALSE(ioopm_linked_list_any(list, element_exist_int, &extra));
@@ -278,7 +279,7 @@ void test_any(void){
 }
 
 void test_apply_to_all(void){
-  ioopm_list_t *list = ioopm_linked_list_create();
+  ioopm_list_t *list = ioopm_linked_list_create(compare_int_elements);
   //Test for an empty list
   int extra = 10;
   ioopm_linked_apply_to_all(list,change_element_int,&extra);

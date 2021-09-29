@@ -49,10 +49,8 @@ bool ioopm_iterator_has_next(ioopm_list_iterator_t *iter){
     if (iter->current->next != NULL){
         return true;
     }
-
     return false;
 }
-
 
 // Will return its current element if next does not exist
 elem_t ioopm_iterator_next(ioopm_list_iterator_t *iter){
@@ -81,18 +79,3 @@ void ioopm_iterator_destroy(ioopm_list_iterator_t *iter){
     free(iter);
     iter = NULL;
 }
-
-/*
-int main(int argc, char const *argv[])
-{
-    ioopm_list_t *list = ioopm_linked_list_create();
-    //ioopm_list_insert(list, int_elem(10));
-    ioopm_list_iterator_t *iter = ioopm_list_iterator(list);
-    ioopm_iterator_next(iter);
-    
-    if(errno==EIO){
-        puts("Error check");
-    }
-    return 0;
-}
-*/

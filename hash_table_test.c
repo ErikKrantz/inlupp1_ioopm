@@ -42,6 +42,18 @@ static bool compare_str_hash(elem_t a, elem_t b){
   return !strcmp(a.s,b.s);
 }
 
+// Will not work so consistent for shorter string keys
+int string_sum_hash(const char *str)
+{
+  int result = 0;
+  do
+    {
+      result += *str;
+    }
+  while (*++str != '\0');
+  return result;
+}
+
 void test_create_and_destroy(void)
 {
   // Int-based hash-keys
@@ -132,7 +144,7 @@ void test_table_lookup(void){
 
 
 void test_remove(void){
-    ioopm_hash_table_t* ht = ioopm_hash_table_create(get_int_hash_key, compare_int_hash);
+    ioopm_hash_table_t* ht = ioopm_hash_table_create(get_int_hash_key, compare_str_hash);
 
     ioopm_hash_table_insert(ht,int_elem(1),str_elem("a"));
     ioopm_hash_table_insert(ht,int_elem(-16),str_elem("b"));
@@ -196,138 +208,173 @@ void test_clear(){
   
   ioopm_hash_table_destroy(ht);
 }
-/*
+
 void test_table_keys(){
-  ioopm_hash_table_t_old *ht = ioopm_hash_table_create();
-  int *keys = ioopm_hash_table_keys(ht);
-  CU_ASSERT(keys==NULL);
-  ioopm_hash_table_insert(ht,10,"a");
-  free(keys);
+  ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, compare_str_hash);
+  
+  // Test empty keys
+  ioopm_list_t *keys = ioopm_hash_table_keys(ht);
+  CU_ASSERT_EQUAL(ioopm_linked_list_size(keys), 0);
+  ioopm_linked_list_destroy(keys);
+  
+  //int keys_length = sizeof(*keys) / sizeof(int);
+  
+  // Test non-empty keys
+  ioopm_hash_table_insert(ht,int_elem(10),str_elem("a"));
   keys = ioopm_hash_table_keys(ht);
-  int keys_length = sizeof(*keys) / sizeof(int);
-  CU_ASSERT(keys_length==1);
-  CU_ASSERT(*keys==10);
-  free(keys);
+  size_t key_amount = 1;
+  CU_ASSERT_EQUAL(ioopm_linked_list_size(keys), key_amount);
+  
+  ioopm_linked_list_destroy(keys);
+  
   ioopm_hash_table_destroy(ht);
 }
+
 
 void test_table_values(){
-  ioopm_hash_table_t_old *ht = ioopm_hash_table_create();
-  //char *values[] = ioopm_hash_table_values(ht);
-  char **values = ioopm_hash_table_values(ht);
-  CU_ASSERT_PTR_NULL(*values);
-  free(values);
-
-  ioopm_hash_table_insert(ht,10,"b");
-  values = ioopm_hash_table_values(ht);
-  //CU_ASSERT_STRING_EQUAL(values[0], "b");
-  CU_ASSERT_STRING_EQUAL(*values, "b");
-  //++values;
-  //CU_ASSERT_PTR_NULL(*values)
-  CU_ASSERT_PTR_NULL(values[1]);
-  free(values);
-
-  ioopm_hash_table_insert(ht,9,"a");
-  values = ioopm_hash_table_values(ht);
-  CU_ASSERT_STRING_EQUAL(*values, "a");
-  CU_ASSERT_STRING_EQUAL(values[1], "b");
-  CU_ASSERT_PTR_NULL(values[2]);
-  free(values);
+  ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, compare_str_hash);
+  
+  ioopm_list_t *values = ioopm_hash_table_values(ht);
+  CU_ASSERT_EQUAL(ioopm_linked_list_size(values), 0);
+  ioopm_linked_list_destroy(values);
+  
+  //int keys_length = sizeof(*keys) / sizeof(int);
+  
+  // Test non-empty keys
+  ioopm_hash_table_insert(ht,int_elem(10),str_elem("a"));
+  values = ioopm_hash_table_keys(ht);
+  size_t key_amount = 1;
+  CU_ASSERT_EQUAL(ioopm_linked_list_size(values), key_amount);
+  ioopm_linked_list_destroy(values);
+  
+  
 
   ioopm_hash_table_destroy(ht);
 }
+
 
 void test_has_key(){
-  ioopm_hash_table_t_old *ht = ioopm_hash_table_create();
-  bool test = ioopm_hash_table_has_key(ht,10);
+  ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, compare_str_hash);
+  
+  // Check before inserts 
+  bool test = ioopm_hash_table_has_key(ht,int_elem(10));
   CU_ASSERT_FALSE(test);
-  ioopm_hash_table_insert(ht, 17, "abc");
-  test = ioopm_hash_table_has_key(ht,17);
+
+  // Check after inserts
+  ioopm_hash_table_insert(ht, int_elem(17), str_elem("abc"));
+  test = ioopm_hash_table_has_key(ht,int_elem(17));
   CU_ASSERT(test);
-  ioopm_hash_table_insert(ht, 34, "abc");
-  test = ioopm_hash_table_has_key(ht,34);
+  ioopm_hash_table_insert(ht, int_elem(34), str_elem("abc"));
+  test = ioopm_hash_table_has_key(ht,int_elem(34));
   CU_ASSERT(test);
-  test = ioopm_hash_table_has_key(ht,1);
+  
+  // Check after removal
+  ioopm_hash_table_remove(ht, int_elem(17));
+  test = ioopm_hash_table_has_key(ht,int_elem(17));
   CU_ASSERT_FALSE(test);
+
+  // Check after clear
+  ioopm_hash_table_clear(ht);
+  test = ioopm_hash_table_has_key(ht,int_elem(34));
+  CU_ASSERT_FALSE(test);
+
   ioopm_hash_table_destroy(ht);
 }
 
-char *ioopm_strdup(char *str)
+/*
+elem_t ioopm_strdup(elem_t str)
 {
-  size_t len = strlen(str);
+  size_t len = strlen(str.s);
   char *result = calloc(len + 1, sizeof(char));
-  strncpy(result, str, len);
-  return result;
+  elem_t result_t = str_elem(result);
+  strncpy(result_t.s, str.s, len);
+  free(result);
+  return result_t;
 }
+*/
 
 void test_has_value(){
-  ioopm_hash_table_t_old *ht = ioopm_hash_table_create();
-  bool test = ioopm_hash_table_has_value(ht,"abc");
+  ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, compare_str_hash);
+  //test empty ht
+  bool test = ioopm_hash_table_has_value(ht,str_elem("abc"));
   CU_ASSERT_FALSE(test);
-  ioopm_hash_table_insert(ht, 17, "a");
+  //test one element ht
+  ioopm_hash_table_insert(ht, int_elem(17), str_elem("a"));
+  test = ioopm_hash_table_has_value(ht,str_elem("a"));
+  CU_ASSERT(test);
+
+  //test multipe element ht
+  ioopm_hash_table_insert(ht, int_elem(34), str_elem("b"));
+  elem_t test_string = str_elem("b");
+  //elem_t target = ioopm_strdup(test_string);
+  test = ioopm_hash_table_has_value(ht,str_elem("b"));
+  CU_ASSERT(test);
   
-  test = ioopm_hash_table_has_value(ht,"a");
+  test = ioopm_hash_table_has_value(ht,test_string);
   CU_ASSERT(test);
-
-  ioopm_hash_table_insert(ht, 34, "b");
-  char *test_string = "b";
-  char *target = ioopm_strdup(test_string);
-  test = ioopm_hash_table_has_value(ht,"b");
-  CU_ASSERT(test);
-  test = ioopm_hash_table_has_value(ht,target);
-  CU_ASSERT(test);
-  test = ioopm_hash_table_has_value(ht,"abc");
+  
+  //test value that does not exist in a multipe element ht
+  test = ioopm_hash_table_has_value(ht,str_elem("abc"));
   CU_ASSERT_FALSE(test);
 
-  free(target);
   ioopm_hash_table_destroy(ht);
 
 }
 
-static bool value_equiv(int key, char *value, void *x){
-  char **other_value_ptr = x;
-  char *other_value = *other_value_ptr;
-  return (strcmp(value, other_value) == 0);
+
+//Checks if *compare_string" == value
+static bool string_equal(elem_t key, elem_t value, void *compare_string, ioopm_eq_function elem_cmp, hash_function hash_func){
+  elem_t *other_value_ptr = compare_string;
+  elem_t other_value = *other_value_ptr;
+  return (elem_cmp(value, other_value));
 }
 
 void test_hash_table_all(){
-  ioopm_hash_table_t_old *ht = ioopm_hash_table_create();
-  char *test_string = "a";
+  ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, compare_str_hash);
+  elem_t test_string = str_elem("a");
   //empty table
-  CU_ASSERT_FALSE(ioopm_hash_table_all(ht, value_equiv, &test_string));
+  CU_ASSERT_FALSE(ioopm_hash_table_all(ht, string_equal, &test_string));
   //all values the same
-  ioopm_hash_table_insert(ht, 17, "a");
-  ioopm_hash_table_insert(ht, 3, "a");
-  CU_ASSERT(ioopm_hash_table_all(ht, value_equiv, &test_string));
+  ioopm_hash_table_insert(ht, int_elem(17), str_elem("a"));
+  ioopm_hash_table_insert(ht, int_elem(34), str_elem("a"));
+  ioopm_hash_table_insert(ht, int_elem(3), str_elem("a"));
+  CU_ASSERT(ioopm_hash_table_all(ht, string_equal, &test_string));
   //different values
-  ioopm_hash_table_insert(ht, 20, "b");
-  CU_ASSERT_FALSE(ioopm_hash_table_all(ht, value_equiv, &test_string));
+  ioopm_hash_table_insert(ht, int_elem(20), str_elem("b"));
+  ioopm_hash_table_insert(ht, int_elem(51), str_elem("b"));
+  CU_ASSERT_FALSE(ioopm_hash_table_all(ht, string_equal, &test_string));
 
   ioopm_hash_table_destroy(ht);
 }
 
-static void change_value(int key, char **entry, void *string_to_insert)
+//Changes *entry = *string_to_insert
+static void change_value(elem_t key, elem_t *entry, void *string_to_insert)
 {
   // change the value of the entry
-  char **string_to_insert_ptr = string_to_insert;
-  char *string = *string_to_insert_ptr;
+  elem_t *string_to_insert_ptr = string_to_insert;
+  elem_t string = *string_to_insert_ptr;
   *entry = string;
 }
 
 void test_hash_apply_to_all(){
-  ioopm_hash_table_t_old *ht = ioopm_hash_table_create();
-  char *string = "kalas";
-  ioopm_hash_table_insert(ht, -17, "a");
-  ioopm_hash_table_insert(ht, 0, "b");
-  ioopm_hash_table_insert(ht, 17, "c");
-  ioopm_hash_table_insert(ht, 34, "d");
-  CU_ASSERT(!ioopm_hash_table_all(ht, value_equiv, &string));
+  ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, compare_str_hash);
+  elem_t string = str_elem("kalas");
+  //test apply to empty list
   ioopm_hash_table_apply_to_all(ht,change_value,&string);
-  CU_ASSERT(ioopm_hash_table_all(ht, value_equiv, &string));
+  CU_ASSERT_FALSE(ioopm_hash_table_all(ht, string_equal, &string));
+  //different values
+  ioopm_hash_table_insert(ht, int_elem(-17), str_elem("a"));
+  ioopm_hash_table_insert(ht, int_elem(0),str_elem("b"));
+  ioopm_hash_table_insert(ht, int_elem(17), str_elem("c"));
+  ioopm_hash_table_insert(ht, int_elem(34), str_elem("d"));
+  CU_ASSERT_FALSE(ioopm_hash_table_all(ht, string_equal, &string));
+  //apply same string and test
+  ioopm_hash_table_apply_to_all(ht,change_value,&string);
+  CU_ASSERT(ioopm_hash_table_all(ht, string_equal, &string));
 
   ioopm_hash_table_destroy(ht);
 }
-*/
+
 int main()
 {
   CU_pSuite test_suite1 = NULL;
@@ -349,12 +396,12 @@ int main()
     (NULL == CU_add_test(test_suite1, "test 4: hash size", test_hashtable_size)) ||
     (NULL == CU_add_test(test_suite1, "test 5: is empty", test_is_empty)) ||
     (NULL == CU_add_test(test_suite1, "test 6: clear", test_clear)) ||
-    //(NULL == CU_add_test(test_suite1, "test 7: table keys", test_table_keys)) ||
-//    (NULL == CU_add_test(test_suite1, "test 8: table values", test_table_values)) || 
-  //  (NULL == CU_add_test(test_suite1, "test 9: table has key",test_has_key)) ||
-    //(NULL == CU_add_test(test_suite1, "test 10: table has value", test_has_value)) ||
-//    (NULL == CU_add_test(test_suite1, "test 11: hash table all",test_hash_table_all)) ||
-  //  (NULL == CU_add_test(test_suite1, "test 12: hash table apply all",test_hash_apply_to_all))
+    (NULL == CU_add_test(test_suite1, "test 7: table keys", test_table_keys)) ||
+    (NULL == CU_add_test(test_suite1, "test 8: table values", test_table_values)) || 
+    (NULL == CU_add_test(test_suite1, "test 9: table has key",test_has_key)) ||
+    (NULL == CU_add_test(test_suite1, "test 10: table has value", test_has_value)) ||
+    (NULL == CU_add_test(test_suite1, "test 11: hash table all",test_hash_table_all)) ||
+    (NULL == CU_add_test(test_suite1, "test 12: hash table apply all",test_hash_apply_to_all)) ||
     (NULL == CU_add_test(test_suite1, "test 13: lookup", test_table_lookup))
 
     )

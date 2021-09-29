@@ -3,12 +3,15 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+#include "common.h"
 #include "hash_table.h"
+
 #define No_Buckets 17
 #define _XOPEN_SOURCE 700
 //#include <errno.h>
 
 // New generic type implementation
+
 union elem
 {
   /// TODO: update the names of the fields to something better? 
@@ -20,6 +23,7 @@ union elem
   char c;
   char *s;
 };
+
 
 struct entry
 {

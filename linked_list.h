@@ -1,19 +1,10 @@
 #pragma once
 #include <stdbool.h>
-#define int_elem(x) (elem_t) { .i=(x) }
-#define ptr_elem(x) (elem_t) { .p=(x) }
-#define uns_int_elem(x) (elem_t) { .u=(x) }
-#define bool_elem(x) (elem_t) { .b=(x) }
-#define float_elem(x) (elem_t) { .f=(x) }
+#include "common.h"
 
-typedef union elem elem_t;
-typedef struct list ioopm_list_t;
-typedef struct list_iterator ioopm_list_iterator_t;
+typedef bool(*ioopm_char_predicate)(elem_t element, void *extra);
 
-typedef bool(*ioopm_eq_function)(elem_t a, elem_t b);
-typedef bool(ioopm_char_predicate)(elem_t element, void *extra);
-typedef void ioopm_apply_char_function (elem_t *element, void *extra);
-typedef void(*apply_fun_t)(elem_t element, void *data);
+typedef void(*apply_fun_t)(elem_t *element, void *data);
 
 /// @brief Create an iterator for a given list
 /// @param list the list to be iterated over
@@ -69,7 +60,7 @@ elem_t ioopm_linked_list_get(ioopm_list_t *list, int index);
 /// @param list the linked list
 /// @param element the element sought
 /// @return true if element is in the list, else false
-bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t element, ioopm_eq_function cmp);
+bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t element);
 
 /// @brief Lookup the number of elements in the linked list in O(1) time
 /// @param list the linked list
@@ -106,4 +97,4 @@ bool ioopm_linked_list_any(ioopm_list_t *list, ioopm_char_predicate prop, void *
 /// @param list the linked list
 /// @param fun the function to be applied
 /// @param extra an additional argument (may be NULL) that will be passed to all internal calls of fun
-void ioopm_linked_apply_to_all(ioopm_list_t *list, ioopm_apply_char_function fun, void *extra);
+void ioopm_linked_apply_to_all(ioopm_list_t *list, apply_fun_t func, void *extra);
