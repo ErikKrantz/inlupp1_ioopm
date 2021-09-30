@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 
 #define int_elem(x) (elem_t) { .i=(x) }
 #define ptr_elem(x) (elem_t) { .p=(x) }
@@ -13,3 +14,6 @@ typedef struct list_iterator ioopm_list_iterator_t;
 typedef struct list ioopm_list_t;
 
 typedef bool(*ioopm_eq_function)(elem_t a, elem_t b);
+
+//Returns an index for a given key
+typedef int(*hash_function)(elem_t a);

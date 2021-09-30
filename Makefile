@@ -21,11 +21,17 @@ runlinked: linked_list.c
 runiterator: iterator.c linked_list.c
 	$(C_COMPILER) $(C_LINK_OPTIONS) iterator.c linked_list.c -o runiterator
 
+runread: readfile.c hash_table.c linked_list.c
+	$(C_COMPILER) $(C_LINK_OPTIONS) readfile.c hash_table.c linked_list.c -o runread
+	
 gdb_hash: hash_table.c
 	$(C_GDB_TEST) hash_table.c -o gdb_hash
 
 gdb_linked: linked_list.c
 	$(C_GDB_TEST) linked_list.c -o gdb_linked
+
+gdb_read: readfile.c hash_table.c linked_list.c
+	$(C_GDB_TEST) readfile.c hash_table.c linked_list.c -o gdb_read
 
 test_hash: hash_table.c linked_list.c hash_table_test.c
 	$(C_UNIT_TEST) hash_table.c linked_list.c hash_table_test.c -o test_hash -lcunit
@@ -44,6 +50,9 @@ valgrind_linked: test_linked
 
 valgrind_hash: test_hash
 	$(C_VALGRIND) ./test_hash -g
+
+valgrind_read: runread
+	$(C_VALGRIND) ./runread -g
 
 
 

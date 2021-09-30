@@ -20,9 +20,6 @@
 typedef struct entry ioopm_entry_t;
 typedef struct hash_table ioopm_hash_table_t;
 
-//Returns an index for a given key
-typedef int(*hash_function)(elem_t a);
-
 typedef bool(*ioopm_predicate)(elem_t key, elem_t value, void *extra, ioopm_eq_function elem_cmp, hash_function hash_func);
 typedef void(*ioopm_apply_function)(elem_t key, elem_t *value, void *extra);
 

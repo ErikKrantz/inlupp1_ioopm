@@ -76,7 +76,6 @@ bool ioopm_linked_list_is_empty(ioopm_list_t *list);
 /// @param list the linked list
 void ioopm_linked_list_clear(ioopm_list_t *list);
 
-
 /// @brief Test if a supplied property holds for all elements in a list.
 /// The function returns as soon as the return value can be determined.
 /// @param list the linked list

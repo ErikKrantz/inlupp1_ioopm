@@ -47,9 +47,16 @@ ioopm_list_iterator_t *ioopm_list_iterator(ioopm_list_t *list){
     return iter;
 }
 
+static link_t *create_link(elem_t elem, link_t *pointer){
+    link_t *entry = calloc(1,sizeof(link_t));
+    entry->element = elem;
+    entry->next = pointer;
+    return entry;
+}
+
 ioopm_list_t *ioopm_linked_list_create(ioopm_eq_function eq_func){
     ioopm_list_t *list = calloc(1,sizeof(ioopm_list_t));
-    link_t *dummy = calloc(1,sizeof(link_t));
+    link_t *dummy = create_link(int_elem(0),NULL);
     list->first = dummy;
     list->last = dummy;
     list->size = 0;
@@ -73,13 +80,6 @@ void ioopm_linked_list_destroy(ioopm_list_t *list){
     }
     free(list);
     list = NULL;
-}
-
-static link_t *create_link(elem_t elem, link_t *pointer){
-    link_t *entry = calloc(1,sizeof(link_t));
-    entry->element = elem;
-    entry->next = pointer;
-    return entry;
 }
 
 void ioopm_linked_list_append(ioopm_list_t *list, elem_t value){
