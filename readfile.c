@@ -71,15 +71,12 @@ void add_word(char *word,ioopm_hash_table_t *ht)
     if(ioopm_hash_table_has_key(ht, str_elem(word))){
        bool success = true;
        elem_t occurence = ioopm_hash_table_lookup(ht, str_elem(word), &success);
-       
        ++occurence.i;
-
-       ioopm_hash_table_insert(ht,str_elem(word),occurence);
+       ioopm_hash_table_insert(ht,str_elem(strdup(word)),occurence);
     }
     // If word does not exist, add a new element with value = word and key = 1  
     else{
-    ioopm_hash_table_insert(ht, str_elem(word), int_elem(1));
-
+    ioopm_hash_table_insert(ht, str_elem(strdup(word)), int_elem(1));
     }
 }
 
@@ -91,7 +88,10 @@ void create_hash_for_file(char *str,ioopm_hash_table_t *ht){
    while( token != NULL ) {
       add_word(token,ht);
       token = strtok(NULL, s);
+      //free(token);
    }
+   //free(str);
+   //free(token);
 }
 
 void read_file(char *filename, ioopm_hash_table_t *ht){
@@ -100,14 +100,14 @@ void read_file(char *filename, ioopm_hash_table_t *ht){
         char *result = NULL;
         size_t size = 0;
         getline(&result, &size, file);
-        create_hash_for_file(result,ht);
-        
+        create_hash_for_file(result,ht);     
+
         if (feof(file)){
-            //free(result);
+            free(result);
             fclose(file);
-        break;
+            break;
         }
-        //free(result);
+        free(result);
     }
 }
 

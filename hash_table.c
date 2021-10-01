@@ -6,7 +6,7 @@
 #include "common.h"
 #include "hash_table.h"
 
-#define No_Buckets 17
+#define No_Buckets 40
 #define _XOPEN_SOURCE 700
 //#include <errno.h>
 
