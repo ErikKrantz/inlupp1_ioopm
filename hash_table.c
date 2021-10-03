@@ -37,8 +37,46 @@ struct hash_table
   ioopm_entry_t *buckets[No_Buckets];
   hash_function hash_function; 
   ioopm_eq_function value_cmp;
-  ioopm_eq_function key_cmp;
+  ioopm_eq_function_key key_cmp;
 };
+/*
+bool string_eq(elem_t e1, elem_t e2)
+{
+  return (!strcmp(e1.s, e2.s));
+}*/
+
+/*
+Returns:
+0 if e1 = e2
+- if e1 < e2
++ if e1 >e2 
+
+
+1 5    = -1
+0 5     =-1
+-7 0   = -1
+-10 -7  = -1
+-3 -8   = 1
+6 -3    = 1
+6 -11   = 1
+-3 8    = -1
+-3 1   = -1
+
+0 -17  = 1
+
+
+
+int int_eq(elem_t e1, elem_t e2)
+{
+  return (e1.i-e2.i); // if((e1.i>=0 && e2.i>=0)||(e1.i<=0 && e2.i<=0)) 
+ 
+}*/
+
+int hash_function_int(elem_t e)
+{
+  return e.i;
+}
+
 
 static ioopm_entry_t *entry_create(elem_t key, elem_t value, ioopm_entry_t *next)
 {
@@ -49,7 +87,7 @@ static ioopm_entry_t *entry_create(elem_t key, elem_t value, ioopm_entry_t *next
     return entry;
 }
 
-ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function value_cmp, ioopm_eq_function key_cmp) //TODO check pointers
+ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function value_cmp, ioopm_eq_function_key key_cmp) //TODO check pointers
 {
   /// Allocate space for a ioopm_hash_table_t = No_Buckets pointers to ioopm_entry_t's
   ioopm_hash_table_t *result = calloc(1, sizeof(ioopm_hash_table_t));
@@ -71,17 +109,16 @@ ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_fu
 
 
 /*
-
-Returnerar NULL om entry ska läggas först i bucketen,
-annars returnerar entry för den som ligger före
+Om key finns returneras det entry som ligger före,
+Om key inte finns returneras det entry som "borde" ligga före
 */
 
-static ioopm_entry_t *find_previous_entry_for_key(elem_t key, ioopm_eq_function key_cmp, ioopm_entry_t *cursor)
+static ioopm_entry_t *find_previous_entry_for_key(elem_t key, ioopm_eq_function_key key_cmp, ioopm_entry_t *cursor)
 {
   ioopm_entry_t *tmp = cursor->next;
  while (tmp != NULL)
  {
-    if (key_cmp(key, tmp->key)){ // || hash_func(tmp->key) > hash_func(key)){ // ||tmp->key >key
+    if (key_cmp(tmp->key, key) >= 0){ // tmp->key >key TODO: lägg till detta. Fall: vi vill inserta något först i en listsa
       return cursor;
       }
   cursor = tmp;
@@ -105,13 +142,13 @@ static void update_entry_value(elem_t value, ioopm_entry_t *entry){
 void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value){
   /// Calculate the bucket for this entry
   hash_function hash_func = ht->hash_function;
-  ioopm_eq_function key_cmp = ht->key_cmp;
+  ioopm_eq_function_key key_cmp = ht->key_cmp;
   int bucket = possitve_modulo(hash_func(key), No_Buckets);
 
   ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);//en av två alternativ, kopia vs adress
-  ioopm_entry_t *cur_entry = NULL;
+  ioopm_entry_t *cur_entry = pre_entry->next;
 
-  if(pre_entry->next != NULL){ //"om vi inte är i slutet av listan, alltså finns nyckeln"
+  if(cur_entry != NULL && 0==key_cmp(key, cur_entry->key)){ //TODO: check segfault"om vi inte är i slutet av listan, alltså finns nyckeln"
     update_entry_value(value, pre_entry->next);
   }
   else{//vi måste skapa en ny entry och lägga till den sist
@@ -122,17 +159,17 @@ void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value){
 
 elem_t ioopm_hash_table_lookup(ioopm_hash_table_t *ht, elem_t key, bool *success){
   hash_function hash_func = ht->hash_function;
-  ioopm_eq_function key_cmp = ht->key_cmp;
+  ioopm_eq_function_key key_cmp = ht->key_cmp;
   int bucket = possitve_modulo(hash_func(key), No_Buckets);
   /// Find the previous entry for key
-  ioopm_entry_t *tmp = find_previous_entry_for_key(key, key_cmp,ht->buckets[bucket]);
-  ioopm_entry_t *next = tmp->next;
-  if (next != NULL)
+  ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp,ht->buckets[bucket]);
+  ioopm_entry_t *cur_entry = pre_entry->next;
+  if (cur_entry != NULL)
   {
-    if(key_cmp(next->key, key))
+    if(0==key_cmp(cur_entry->key, key))
    {
     *success = true;
-    return next->value;
+    return cur_entry->value;
    }
   }
   *success = false;
@@ -147,14 +184,14 @@ static void entry_destroy(ioopm_entry_t *entry){
 //TODO: felmeddelande om vi vill remova något som inte finns
 elem_t ioopm_hash_table_remove(ioopm_hash_table_t *ht, elem_t key){
   hash_function hash_func = ht->hash_function;      // TODO fix ptr
-  ioopm_eq_function key_cmp = ht->key_cmp;
+  ioopm_eq_function_key key_cmp = ht->key_cmp;
 
   //ioopm_eq_function *value_cmp = ht->value_cmp;     TODO: uncomment when used
   int bucket = possitve_modulo(hash_func(key), No_Buckets);
 
   ioopm_entry_t *pre_entry= find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);
   ioopm_entry_t *delete_entry = pre_entry->next;
-  if(delete_entry ==NULL){
+  if(delete_entry == NULL || 0 != key_cmp(delete_entry->key, key)){ //check segfault
     return ptr_elem(NULL);
   }
   ioopm_entry_t *next_entry = delete_entry->next;
@@ -227,7 +264,7 @@ size_t ioopm_hash_table_size(ioopm_hash_table_t *ht){
 }
 
 ioopm_list_t *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
-  ioopm_list_t *list = ioopm_linked_list_create(ht->value_cmp);
+  ioopm_list_t *list = ioopm_linked_list_create(ht->key_cmp);
   size_t no_keys = ioopm_hash_table_size(ht);
   ioopm_entry_t *entry = NULL;
   if (no_keys==0) // empty hash table
@@ -266,10 +303,10 @@ ioopm_list_t *ioopm_hash_table_values(ioopm_hash_table_t *ht){
 }
 
 static bool key_equiv(elem_t key, elem_t value, void *x,  ioopm_hash_table_t *ht ){
-  ioopm_eq_function key_cmp = ht->key_cmp;
+  ioopm_eq_function_key key_cmp = ht->key_cmp;
   elem_t *other_key_ptr = x;
   elem_t other_key = *other_key_ptr;
-  return (key_cmp(key, other_key)); // return (0 == hash_func(key) == hash_func(other_key));
+  return (0==key_cmp(key, other_key));
 }
 
 static bool value_equiv(elem_t key, elem_t value, void *x, ioopm_hash_table_t *ht){
@@ -338,3 +375,25 @@ void ioopm_hash_table_apply_to_all(ioopm_hash_table_t *ht, ioopm_apply_function 
   free(value_p);
   value_p = NULL;
 }
+/*
+int main(int argc, char *argv[])
+{ 
+  ioopm_hash_table_t *ht = ioopm_hash_table_create(hash_function_int,string_eq,int_eq);
+
+  ioopm_hash_table_insert(ht, int_elem(34),str_elem("tretiofyra"));
+  ioopm_hash_table_insert(ht, int_elem(17), str_elem(NULL));
+  //ioopm_hash_table_insert(ht,int_elem(-17),str_elem("minus17"));
+  ioopm_hash_table_insert(ht,int_elem(51),str_elem("femtio1"));
+  ioopm_hash_table_insert(ht,int_elem(3),str_elem("tre"));
+  ioopm_hash_table_insert(ht,int_elem(1),str_elem("ett"));
+   // ioopm_hash_table_insert(ht,int_elem(0), str_elem("noll"));
+
+
+  printf("%d, ",ht->buckets[1]->next->key.i);
+  printf("%d, ",ht->buckets[3]->next->key.i);
+  printf("%d, ",ht->buckets[0]->next->key.i);
+  printf("%d, ",ht->buckets[0]->next->next->key.i);
+  printf("%d, ",ht->buckets[0]->next->next->next->key.i);
+  //printf("%d, ",ht->buckets[0]->next->next->next->next->key.i);
+ // printf("%d\n",ht->buckets[0]->next->next->next->next->next->key.i);
+}*/

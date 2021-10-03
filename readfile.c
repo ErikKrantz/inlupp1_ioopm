@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <ctype.h>
-#include "common.h"
 #include "hash_table.h"
-#include <unistd.h> // TODO remove
+#include "linked_list.h"
+#include "common.h"
+
+#define Delimiters "+-#@()[]{}.,:;!? \t\n\r"
 
 union elem
 {
@@ -17,114 +18,132 @@ union elem
   //char c;
   char *s;
 };
-/*
-int convert_str_to_key (elem_t a){
-    return 1;
-}*/
 
-bool value_compare(elem_t a, elem_t b){
-    return a.i == b.i;
+static int cmpstringp(const void *p1, const void *p2)
+{
+  return strcmp(*(char *const *)p1, *(char *const *)p2);
 }
 
-int convert_str_to_key(elem_t a){
-    int result = 0;
-    char *str = a.s;
-    do
-        {
-        result += *str;
-        }
-    while (*++str != '\0');
-    return result;
+void sort_keys(char *keys[], size_t no_keys)
+{
+  qsort(keys, no_keys, sizeof(char *), cmpstringp);
 }
 
-static int cmpstringp(const void *p1, const void *p2){  
-    return strcmp(*(char *const *)p1, *(char *const *)p2);
+void add_end_line(char *filename){
+    FILE *file2 = fopen(filename, "a+");
+    fprintf(file2, "\n");
+    fclose(file2);
+}
+
+void process_word(char *word, ioopm_hash_table_t *ht)
+{
+  bool success = true;
+  char *dup_word = strdup(word);
+  int freq = ioopm_hash_table_has_key(ht, str_elem(word))?   (ioopm_hash_table_lookup(ht,  str_elem(word), &success)).i:    0;
+  ioopm_hash_table_insert(ht, str_elem(dup_word),int_elem(freq+1));
+  //int freq = (ioopm_hash_table_lookup(ht,  str_elem(word), &success)).i;
+  //success? ioopm_hash_table_insert(ht, str_elem(dup_word),int_elem(freq+1)) : ioopm_hash_table_insert(ht, str_elem(dup_word),int_elem(1));
+  
+}
+
+void process_file(char *filename, ioopm_hash_table_t *ht){
+
+  add_end_line(filename);
+
+  FILE *f = fopen(filename, "r");
+
+  while (true)
+  {
+    char *buf = NULL;
+    size_t len = 0;
+    getline(&buf, &len, f);
+
+    if (feof(f))
+    {
+      free(buf);      
+      break;
+    }
+    
+    for (char *word = strtok(buf, Delimiters); word && *word; word = strtok(NULL, Delimiters))
+    {
+      process_word(word, ht);
     }
 
-void print_all(ioopm_hash_table_t *ht){
+    free(buf);
     
-    size_t size = ioopm_hash_table_size(ht);
+  }
+
+  fclose(f);
+}
+
+int string_sum_hash(elem_t e)
+{
+  char *str = e.s;
+  int result = 0;
+  do
+    {
+      result += *str;
+    }
+  while (*++str != '\0');
+  return result;
+}
+
+int string_eq(elem_t e1, elem_t e2)
+{
+  return strcmp(e1.s, e2.s);
+}
+
+bool int_eq(elem_t e1, elem_t e2)
+{
+  return (e1.i==e2.i);
+}
+
+int main(int argc, char *argv[])
+{
+  ioopm_hash_table_t *ht = ioopm_hash_table_create(string_sum_hash, int_eq, string_eq);
+  if (argc > 1)
+  {
+    for (int i = 1; i < argc; ++i)
+    {
+      process_file(argv[i], ht);
+    }
+
     ioopm_list_t *keys = ioopm_hash_table_keys(ht);
-    //create an array keys
-    size_t no_keys = ioopm_linked_list_size(keys);
-    char *keys_array[no_keys];
-    for (size_t i = 0; i < no_keys ; i++)
+    size_t size = ioopm_linked_list_size(keys);
+
+    char *keys_array[size];
+    for (size_t i = 0; i < size ; i++)
     {
         keys_array[i] = ioopm_linked_list_get(keys,i).s;
-    }
-    //sort the keys
-    qsort(keys_array,no_keys,sizeof(char *),cmpstringp);
 
-    //print all keys with corresponding value
-    for (int i = 0; i<size; i++){
-        char *key = keys_array[i];
-        bool success = true;
-        int value = ioopm_hash_table_lookup(ht, str_elem(key), &success).i;
-        printf("%s : %d\n", key, value);
     }
+    sort_keys(keys_array, size);
+
+    for (int i = 0; i < size; ++i) 
+    {
+      bool success = true;
+      int freq = (ioopm_hash_table_lookup(ht, str_elem(keys_array[i]), &success)).i;
+      printf("%s: %d\n", keys_array[i], freq);
+    }
+
+    
+    for (int i = 0; i < size; i++)
+    {
+      ioopm_linked_list_get(keys,i);
+    }
+    
     ioopm_linked_list_destroy(keys);
-}
 
-void add_word(char *word,ioopm_hash_table_t *ht)
-{
-    // If word exist, increment occurence by +1
-    if(ioopm_hash_table_has_key(ht, str_elem(word))){
-       bool success = true;
-       elem_t occurence = ioopm_hash_table_lookup(ht, str_elem(word), &success);
-       ++occurence.i;
-       ioopm_hash_table_insert(ht,str_elem(strdup(word)),occurence);
-    }
-    // If word does not exist, add a new element with value = word and key = 1  
-    else{
-    ioopm_hash_table_insert(ht, str_elem(strdup(word)), int_elem(1));
-    }
-}
+  }
+  else
+  {
+    puts("Usage: freq-count file1 ... filen");
+  }
 
-void create_hash_for_file(char *str,ioopm_hash_table_t *ht){
-   const char *s = "+-#@()[]{}.,:;!? \t\n\r";
-   char *line2 = str;
-   char *token = strtok(line2, s);
-      
-   /* walk through other tokens */
-   while( token != NULL ) {
-      add_word(token,ht);
-      token = strtok(NULL, s);
-      //free(token);
-   }
-   //free(str);
-   //free(token);
-}
+  // FIXME: Leaks memory! Use valgrind to find out where that memory is 
+  // being allocated, and then insert code here to free it.
 
-void read_file(char *filename, ioopm_hash_table_t *ht){
-    FILE *file = fopen(filename,"r");
-    while(true){
-        char *result = NULL;
-        size_t size = 0;
-        getline(&result, &size, file);
-        create_hash_for_file(result,ht);     
+  ioopm_hash_table_destroy(ht);
 
-        if (feof(file)){
-            free(result);
-            fclose(file);
-            break;
-        }
-        free(result);
-    }
-}
-
-int main(int argc, char *argv[]){
-
-    ioopm_hash_table_t *ht = ioopm_hash_table_create(convert_str_to_key,value_compare);
-
-    int file_amount = argc;
-    
-    for (int i = 1; i<file_amount; i++){
-        read_file(argv[i],ht);
-    }
-    
-    print_all(ht);
-    
-    ioopm_hash_table_destroy(ht);
-    return 0;
 }
 
