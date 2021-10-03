@@ -53,7 +53,7 @@ void print_all(ioopm_hash_table_t *ht){
         keys_array[i] = ioopm_linked_list_get(keys,i).s;
     }
     //sort the keys
-    qsort(keys_array,no_keys,sizeof(char*),cmpstringp);
+    qsort(keys_array,no_keys,sizeof(char *),cmpstringp);
 
     //print all keys with corresponding value
     for (int i = 0; i<size; i++){
@@ -82,7 +82,8 @@ void add_word(char *word,ioopm_hash_table_t *ht)
 
 void create_hash_for_file(char *str,ioopm_hash_table_t *ht){
    const char *s = "+-#@()[]{}.,:;!? \t\n\r";
-   char *token = strtok(str, s);
+   char *line2 = str;
+   char *token = strtok(line2, s);
       
    /* walk through other tokens */
    while( token != NULL ) {

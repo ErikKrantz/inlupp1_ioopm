@@ -5,7 +5,7 @@ C_LINK_OPTIONS = -lm
 CUNIT_LINK     = -lcunit
 C_GDB_TEST     = gcc -pedantic -Wall -g
 C_UNIT_TEST    = gcc -ggdb -Wall -std=c11 -g
-C_VALGRIND     = valgrind --leak-check=full
+C_VALGRIND     = valgrind --leak-check=full --show-leak-kinds=all
 
 #-o gör en o fil som kan köras
 
@@ -23,6 +23,9 @@ runiterator: iterator.c linked_list.c
 
 runread: readfile.c hash_table.c linked_list.c
 	$(C_COMPILER) $(C_LINK_OPTIONS) readfile.c hash_table.c linked_list.c -o runread
+
+runreadex: readfile_example.c hash_table.c linked_list.c
+	$(C_COMPILER) $(C_LINK_OPTIONS) readfile_example.c hash_table.c linked_list.c -o runreadex
 	
 gdb_hash: hash_table.c
 	$(C_GDB_TEST) hash_table.c -o gdb_hash
@@ -53,6 +56,8 @@ valgrind_hash: test_hash
 
 valgrind_read: runread
 	$(C_VALGRIND) ./runread -g
+valgrind_readex: runreadex
+	$(C_VALGRIND) ./runreadex -g
 
 
 

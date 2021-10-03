@@ -20,12 +20,12 @@
 typedef struct entry ioopm_entry_t;
 typedef struct hash_table ioopm_hash_table_t;
 
-typedef bool(*ioopm_predicate)(elem_t key, elem_t value, void *extra, ioopm_eq_function elem_cmp, hash_function hash_func);
+typedef bool(*ioopm_predicate)(elem_t key, elem_t value, void *extra, ioopm_hash_table_t *ht);
 typedef void(*ioopm_apply_function)(elem_t key, elem_t *value, void *extra);
 
 //@brief Create a new hash table
 //@return A new empty hash table
-ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function elem_cmp); // TO CHECK *hash_func *elem_cmp or no ptrs
+ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function elem_cmp, ioopm_eq_function key_cmp); // TO CHECK *hash_func *elem_cmp or no ptrs
 
 //@brief Delete a hash table and free its memory
 //@param ht a hash table to be deleted
