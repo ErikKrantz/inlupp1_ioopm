@@ -17,7 +17,7 @@
  */
 
 
-typedef struct entry ioopm_entry_t;
+typedef struct entry ioopm_entry_t; //TODO make this private?
 typedef struct hash_table ioopm_hash_table_t;
 
 typedef bool(*ioopm_predicate)(elem_t key, elem_t value, void *extra, ioopm_hash_table_t *ht);

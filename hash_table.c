@@ -6,8 +6,10 @@
 #include "common.h"
 #include "hash_table.h"
 
-#define No_Buckets 17
+#define Init_No_Buckets 17 //TODO: remove
+#define Inital_capacity 17
 #define _XOPEN_SOURCE 700
+#define Load_Factor 0.75
 //#include <errno.h>
 
 // New generic type implementation
@@ -34,10 +36,11 @@ struct entry
 
 struct hash_table
 {
-  ioopm_entry_t *buckets[No_Buckets];
   hash_function hash_function; 
   ioopm_eq_function value_cmp;
   ioopm_eq_function_key key_cmp;
+  size_t capacity;
+  ioopm_entry_t *buckets[]; // OLD: ioopm_entry_t *buckets[No_Buckets];
 };
 /*
 bool string_eq(elem_t e1, elem_t e2)
@@ -51,21 +54,6 @@ Returns:
 - if e1 < e2
 + if e1 >e2 
 
-
-1 5    = -1
-0 5     =-1
--7 0   = -1
--10 -7  = -1
--3 -8   = 1
-6 -3    = 1
-6 -11   = 1
--3 8    = -1
--3 1   = -1
-
-0 -17  = 1
-
-
-
 int int_eq(elem_t e1, elem_t e2)
 {
   return (e1.i-e2.i); // if((e1.i>=0 && e2.i>=0)||(e1.i<=0 && e2.i<=0)) 
@@ -77,7 +65,6 @@ int hash_function_int(elem_t e)
   return e.i;
 }
 
-
 static ioopm_entry_t *entry_create(elem_t key, elem_t value, ioopm_entry_t *next)
 {
     ioopm_entry_t *entry = calloc(1, sizeof(ioopm_entry_t));
@@ -87,23 +74,63 @@ static ioopm_entry_t *entry_create(elem_t key, elem_t value, ioopm_entry_t *next
     return entry;
 }
 
+ioopm_hash_table_t ioopm_hash_table_resize(ioopm_hash_table_t *ht){
+   size_t old_capacity = ht->capacity;
+   size_t primes[] = {0, 17, 31, 67, 127, 257, 509, 1021, 2053, 4099, 8191, 16381};
+   size_t length_primes = 11;
+   size_t new_capacity;
+   for (size_t i = 0; i<length_primes; i++)
+    {
+     if (primes[i] == old_capacity)
+     new_capacity = primes[i+1];
+    }
+   ht->capacity = new_capacity;
+
+   no_new_buckets = new_capacity - old_capacity; // How many new elements we need to add
+
+   // Increase bucket list
+
+   realloc(ht->buckets, new_capacity*sizeof(ioopm_entry_t)); //TODO: initialize added memory
+
+   for (int i = old_capacity; i < new_capacity; i++)
+    {
+      ht->buckets[i] = NULL;
+    }
+   
+   // Populate new buckets
+   
+
+}
+
 ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function value_cmp, ioopm_eq_function_key key_cmp) //TODO check pointers
 {
   /// Allocate space for a ioopm_hash_table_t = No_Buckets pointers to ioopm_entry_t's
   ioopm_hash_table_t *result = calloc(1, sizeof(ioopm_hash_table_t));
+  
+  result->buckets = calloc(1,sizeof(ioopm_entry_t));
+  result->capacity = 0;
+  result->hash_function = hash_func; 
+  result->value_cmp = value_cmp;       
+  result->key_cmp = key_cmp;
+  
+   
+  result = ioopm_resize_hashtable(ht);
+
+  //ioopm_entry_t *buckets[] = calloc(Init_No_Buckets,sizeof(ioopm_entry_t));
+  
+  /*
   /// Initialise the ioopm_entry_t pointers to NULL
-  for (int i = 0; i < No_Buckets; ++i)
+  for (int i = 0; i < Init_No_Buckets; ++i)
     {
       result->buckets[i] = NULL;
     }
    /// Get a pointer to the first entry in the bucket
-  for (int i = 0; i < No_Buckets; i++)
+  for (int i = 0; i < Init_No_Buckets; i++)
   {
     result->buckets[i] = entry_create(int_elem(0),ptr_elem(NULL),NULL);
   }
-  result->hash_function = hash_func; 
-  result->value_cmp = value_cmp;       
-  result->key_cmp = key_cmp;
+  */
+  
   return result;
 }
 
@@ -112,10 +139,31 @@ ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_fu
 Om key finns returneras det entry som ligger före,
 Om key inte finns returneras det entry som "borde" ligga före
 */
-
-static ioopm_entry_t *find_previous_entry_for_key(elem_t key, ioopm_eq_function_key key_cmp, ioopm_entry_t *cursor)
+static ioopm_entry_t **find_previous_entry_for_key(elem_t key, ioopm_eq_function_key key_cmp, ioopm_entry_t **cursor)
 {
-  ioopm_entry_t *tmp = cursor->next;
+   
+  /*
+  **cursor = s
+
+  cursor: ->buckets[->bucket, ->bucket,entry...]
+  entry : ->bucket{->entry, ->entry, ->entry,...}
+  */
+
+  ioopm_entry_t *entry = *cursor;
+  
+  while (entry != NULL)
+  {
+    if (key_cmp(entry->key, key) >= 0){
+      return entry;
+    }
+    cursor = entry;
+    entry = cursor->next;
+  }
+
+  return entry;
+  
+  /*
+ ioopm_entry_t *tmp = cursor->next;
  while (tmp != NULL)
  {
     if (key_cmp(tmp->key, key) >= 0){ // tmp->key >key TODO: lägg till detta. Fall: vi vill inserta något först i en listsa
@@ -125,6 +173,7 @@ static ioopm_entry_t *find_previous_entry_for_key(elem_t key, ioopm_eq_function_
   tmp = cursor->next;
  }
   return cursor;
+  */
 }
 
 static int possitve_modulo (int n, int mod){
@@ -139,11 +188,29 @@ static void update_entry_value(elem_t value, ioopm_entry_t *entry){
     entry->value = value; //ändrar value på en nyckel som finns
 }
 
+
+
+
+void check_load(ioopm_hash_table_t *ht){
+    size_t no_entries = ioopm_hash_table_size(ht);
+
+    if (no_entries >= Load_Factor*(ht->capacity){
+      // Increase size of hashtable
+      ioopm_hash_table_resize(ht);
+    } 
+}
+
 void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value){
+
+  // TODO: Check for 
+  // if check if the load factor is reached, increase the capacity of the hash table
+
+  check_load(ht);
+
   /// Calculate the bucket for this entry
   hash_function hash_func = ht->hash_function;
   ioopm_eq_function_key key_cmp = ht->key_cmp;
-  int bucket = possitve_modulo(hash_func(key), No_Buckets);
+  int bucket = possitve_modulo(hash_func(key), ht->capacity);
 
   ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);//en av två alternativ, kopia vs adress
   ioopm_entry_t *cur_entry = pre_entry->next;
@@ -160,7 +227,7 @@ void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value){
 elem_t ioopm_hash_table_lookup(ioopm_hash_table_t *ht, elem_t key, bool *success){
   hash_function hash_func = ht->hash_function;
   ioopm_eq_function_key key_cmp = ht->key_cmp;
-  int bucket = possitve_modulo(hash_func(key), No_Buckets);
+  int bucket = possitve_modulo(hash_func(key), ht->capacity);
   /// Find the previous entry for key
   ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp,ht->buckets[bucket]);
   ioopm_entry_t *cur_entry = pre_entry->next;
@@ -187,7 +254,7 @@ elem_t ioopm_hash_table_remove(ioopm_hash_table_t *ht, elem_t key){
   ioopm_eq_function_key key_cmp = ht->key_cmp;
 
   //ioopm_eq_function *value_cmp = ht->value_cmp;     TODO: uncomment when used
-  int bucket = possitve_modulo(hash_func(key), No_Buckets);
+  int bucket = possitve_modulo(hash_func(key), ht->capacity);
 
   ioopm_entry_t *pre_entry= find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);
   ioopm_entry_t *delete_entry = pre_entry->next;
@@ -214,7 +281,7 @@ static void bucket_destroy(ioopm_entry_t *current_entry)
 }
 
 void ioopm_hash_table_destroy(ioopm_hash_table_t *ht){
-  for(int i = 0; i<No_Buckets; ++i){
+  for(int i = 0; i<ht->capacity; ++i){
     bucket_destroy(ht->buckets[i]);
   }
   free(ht);
@@ -223,7 +290,7 @@ void ioopm_hash_table_destroy(ioopm_hash_table_t *ht){
 
 bool ioopm_hash_table_is_empty(ioopm_hash_table_t *ht)
 {
-  for (int i = 0; i < No_Buckets; ++i)
+  for (int i = 0; i < ht->capacity; ++i)
   {
     if (ht->buckets[i]->next != NULL) //"If there exists entries"
     {
@@ -235,7 +302,7 @@ bool ioopm_hash_table_is_empty(ioopm_hash_table_t *ht)
 
 void ioopm_hash_table_clear(ioopm_hash_table_t *ht)
 {
-  for (int i = 0; i < No_Buckets; i++)              // Iterera över alla buckets
+  for (int i = 0; i < ht->capacity; i++)              // Iterera över alla buckets
   {
     if(ht->buckets[i]->next != NULL){               // Om första elementet efter dummyn inte är NULL
       bucket_destroy(ht->buckets[i]->next);
@@ -255,7 +322,7 @@ static void itterate_over_bucket(size_t *counter, ioopm_entry_t *entry)
 
 size_t ioopm_hash_table_size(ioopm_hash_table_t *ht){
  size_t c = 0;
- for (int i = 0; i < No_Buckets; i++)
+ for (int i = 0; i < ht->capacity; i++)
  {
    ioopm_entry_t *first_entry = ht->buckets[i];
    itterate_over_bucket(&c, first_entry);
@@ -272,7 +339,7 @@ ioopm_list_t *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
     //Kanske ska destory list? Det gjorde vi på förra
     return list;
   }
-  for (int i = 0; i < No_Buckets; i++){ // iterate over array of buckets
+  for (int i = 0; i < ht->capacity; i++){ // iterate over array of buckets
      entry = ht->buckets[i]->next;
      while (entry != NULL){
       ioopm_linked_list_append(list, entry->key);
@@ -292,7 +359,7 @@ ioopm_list_t *ioopm_hash_table_values(ioopm_hash_table_t *ht){
     //Kanske ska destory list? Det gjorde vi på förra
     return list;
   } 
-  for (int i = 0; i < No_Buckets; i++){ // iterate over array of bucket
+  for (int i = 0; i < ht->capacity; i++){ // iterate over array of bucket
     entry = ht->buckets[i]->next;
     while (entry != NULL){
     ioopm_linked_list_append(list,entry->value);
@@ -320,7 +387,7 @@ bool ioopm_hash_table_any(ioopm_hash_table_t *ht, ioopm_predicate pred, void *ar
   ioopm_entry_t *entry = NULL; 
   //ioopm_eq_function value_cmp = ht->value_cmp;      // TODO check ptr
   //kanske bättre prestanda att kolla empty_table först
-  for (size_t i = 0; i < No_Buckets; i++){
+  for (size_t i = 0; i < ht->capacity; i++){
     entry = ht->buckets[i]->next;
     while (entry!=NULL){
       if (pred(entry->key, entry->value, arg, ht)){
@@ -339,7 +406,7 @@ bool ioopm_hash_table_all(ioopm_hash_table_t *ht, ioopm_predicate pred, void *ar
   if(ioopm_hash_table_is_empty(ht)){
     return false;
   } 
-  for (size_t i = 0; i < No_Buckets; i++){
+  for (size_t i = 0; i < ht->capacity; i++){
     entry  = ht->buckets[i]->next;
     while (entry!=NULL){
       if(!pred(entry->key, entry->value, arg, ht)){
@@ -363,7 +430,7 @@ bool ioopm_hash_table_has_key(ioopm_hash_table_t *ht, elem_t key)
 void ioopm_hash_table_apply_to_all(ioopm_hash_table_t *ht, ioopm_apply_function apply_fun, void *arg){
   ioopm_entry_t *entry = NULL;
   elem_t *value_p = calloc(1,sizeof(elem_t));
-  for (size_t i = 0; i < No_Buckets; i++){
+  for (size_t i = 0; i < ht->capacity; i++){
     entry = ht->buckets[i]->next;
     while (entry!=NULL){
       *value_p = entry->value;
