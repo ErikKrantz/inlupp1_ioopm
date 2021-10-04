@@ -47,6 +47,7 @@ ioopm_list_iterator_t *ioopm_list_iterator(ioopm_list_t *list){
     return iter;
 }
 
+//Creates a new link
 static link_t *create_link(elem_t elem, link_t *pointer){
     link_t *entry = calloc(1,sizeof(link_t));
     entry->element = elem;
@@ -64,15 +65,15 @@ ioopm_list_t *ioopm_linked_list_create(ioopm_eq_function eq_func){
     return list;
 }
 
+//Frees allocated memory by link
 static void destroy_link (link_t *link){
     free(link);
     link = NULL;
 }
 
 void ioopm_linked_list_destroy(ioopm_list_t *list){
-    //Just nu antar funktionen att det alltid finns en dummy
     link_t *current_link = list->first;
-    link_t *next_link;
+    link_t *next_link = NULL;
     while(current_link!=NULL){
         next_link = current_link->next;
         destroy_link(current_link);

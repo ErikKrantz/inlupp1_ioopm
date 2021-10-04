@@ -6,6 +6,7 @@ CUNIT_LINK     = -lcunit
 C_GDB_TEST     = gcc -pedantic -Wall -g
 C_UNIT_TEST    = gcc -ggdb -Wall -std=c11 -g
 C_VALGRIND     = valgrind --leak-check=full --show-leak-kinds=all
+C_COVERAGE     = gcov -abcfu
 
 #-o gör en o fil som kan köras
 
@@ -13,48 +14,55 @@ C_VALGRIND     = valgrind --leak-check=full --show-leak-kinds=all
 	$(C_COMPILER) $(C_OPTIONS) $? -c
 
 runhash: hash_table.c linked_list.c
-	$(C_COMPILER) $(C_LINK_OPTIONS) hash_table.c linked_list.c -o runhash
+	$(C_COMPILER) $(C_LINK_OPTIONS) hash_table.c linked_list.c -o run
 
 runlinked: linked_list.c
-	$(C_COMPILER) $(C_LINK_OPTIONS) linked_list.c -o runlinked
+	$(C_COMPILER) $(C_LINK_OPTIONS) linked_list.c -o run
 
 runiterator: iterator.c linked_list.c
-	$(C_COMPILER) $(C_LINK_OPTIONS) iterator.c linked_list.c -o runiterator
+	$(C_COMPILER) $(C_LINK_OPTIONS) iterator.c linked_list.c -o run
 
 runread: readfile.c hash_table.c linked_list.c
-	$(C_COMPILER) $(C_LINK_OPTIONS) readfile.c hash_table.c linked_list.c -pg -o runread
+	$(C_COMPILER) $(C_LINK_OPTIONS) readfile.c hash_table.c linked_list.c -pg -o run
 	
 gdb_hash: hash_table.c linked_list.c 
-	$(C_GDB_TEST) hash_table.c linked_list.c -o gdb_hash
+	$(C_GDB_TEST) hash_table.c linked_list.c -o gdb_run
 
 gdb_linked: linked_list.c
-	$(C_GDB_TEST) linked_list.c -o gdb_linked
+	$(C_GDB_TEST) linked_list.c -o gdb_run
 
 gdb_read: readfile.c hash_table.c linked_list.c
-	$(C_GDB_TEST) readfile.c hash_table.c linked_list.c -o gdb_read
+	$(C_GDB_TEST) readfile.c hash_table.c linked_list.c -o gdb_run
 
 test_hash: hash_table.c linked_list.c hash_table_test.c
-	$(C_UNIT_TEST) hash_table.c linked_list.c hash_table_test.c -o test_hash -lcunit
+	$(C_UNIT_TEST) hash_table.c linked_list.c hash_table_test.c -o test -lcunit
 
 test_linked: linked_list.c linked_list_test.c
-	$(C_UNIT_TEST) linked_list.c linked_list_test.c -o test_linked -lcunit
+	$(C_UNIT_TEST) linked_list.c linked_list_test.c -o test -lcunit
 
 test_iterator: iterator.c linked_list.c iterator_test.c
-	$(C_UNIT_TEST) iterator.c linked_list.c iterator_test.c -o test_iterator -lcunit
+	$(C_UNIT_TEST) iterator.c linked_list.c iterator_test.c -o test -lcunit
 
 valgrind_iterator: test_iterator
-	$(C_VALGRIND) ./test_iterator -g
+	$(C_VALGRIND) ./test -g
 
 valgrind_linked: test_linked
-	$(C_VALGRIND) ./test_linked -g
+	$(C_VALGRIND) ./test -g
 
 valgrind_hash: test_hash
-	$(C_VALGRIND) ./test_hash -g
+	$(C_VALGRIND) ./test -g
 
 valgrind_read: runread
-	$(C_VALGRIND) ./runread -g
+	$(C_VALGRIND) ./test -g
 
+coverage_hash: hash_table_test.c hash_table.c
+	$(C_COVERAGE) hash_table_test.c hash_table.c
+    
+coverage_linked: linked_list_test.c linked_list.c
+	$(C_COVERAGE) linked_list_test.c linked_list.c
 
+coverage_iterator: iterator_test.c iterator.c linked_list.c
+	$(C_COVERAGE) iterator_test.c iterator.c linked_list.c
 
 
 

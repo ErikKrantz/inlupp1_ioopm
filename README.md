@@ -1,6 +1,24 @@
 # inlupp1_ioopm
 Inlupp 1 ioopm
 
+**HOW TO USE THE PROGRAM**
+
+# Compiling tests:
+> make test_hash
+> make test_linked
+> make test_iterator
+# Running tests:
+> ./test
+
+# Running valgrind:
+> make valgrind_hash
+> make valgrind_linked 
+> make valgrind_iterator
+# Running coverage:
+> make coverage_hash
+> make coverage_linked
+> make coverage_iterator
+
 Questions to be answered:
 2. For each input, what are the top 3 functions in your code (that you have written), or is it library functions?
 

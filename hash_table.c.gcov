@@ -1,0 +1,781 @@
+        -:    0:Source:hash_table.c
+        -:    0:Programs:2
+        -:    1:#include <stdio.h>
+        -:    2:#include <stdlib.h>
+        -:    3:#include <stdbool.h>
+        -:    4:#include <string.h>
+        -:    5:#include <ctype.h>
+        -:    6:#include "common.h"
+        -:    7:#include "hash_table.h"
+        -:    8:
+        -:    9:#define Inital_capacity 17
+        -:   10:#define _XOPEN_SOURCE 700
+        -:   11:#define Load_Factor 0.75
+        -:   12://#include <errno.h>
+        -:   13:
+        -:   14:// New generic type implementation
+        -:   15:
+        -:   16:union elem
+        -:   17:{
+        -:   18:  /// TODO: update the names of the fields to something better? 
+        -:   19:  int i;
+        -:   20:  unsigned int u;
+        -:   21:  bool b;
+        -:   22:  float f;
+        -:   23:  void *p;
+        -:   24:  char c;
+        -:   25:  char *s;
+        -:   26:};
+        -:   27:
+        -:   28:
+        -:   29:struct entry
+        -:   30:{
+        -:   31:  elem_t key;       // holds the key
+        -:   32:  elem_t value;   // holds the value
+        -:   33:  ioopm_entry_t *next; // points to the next entry (possibly NULL)
+        -:   34:};
+        -:   35:
+        -:   36:struct hash_table
+        -:   37:{
+        -:   38:  size_t capacity;
+        -:   39:  hash_function hash_function; 
+        -:   40:  ioopm_eq_function value_cmp;
+        -:   41:  ioopm_eq_function_key key_cmp;
+        -:   42:  ioopm_entry_t **buckets; // OLD: ioopm_entry_t *buckets[No_Buckets];
+        -:   43:};
+        -:   44:
+function possitve_modulo called 608 returned 100% blocks executed 100%
+      608:   45:static int possitve_modulo (int n, int mod){
+      608:   45-block  0
+      608:   46:  n = n % mod;
+      608:   47:  if(n<0){
+      608:   47-block  0
+branch  0 taken 8 (fallthrough)
+branch  1 taken 600
+        8:   48:    n += mod;
+        8:   48-block  0
+unconditional  0 taken 8
+        -:   49:  }
+      608:   50:  return n;
+      608:   50-block  0
+unconditional  0 taken 608
+        -:   51:}
+        -:   52:
+function entry_create called 781 returned 100% blocks executed 100%
+      781:   53:static ioopm_entry_t *entry_create(elem_t key, elem_t value, ioopm_entry_t *next)
+      781:   53-block  0
+        -:   54:{
+      781:   55:    ioopm_entry_t *entry = calloc(1, sizeof(ioopm_entry_t));
+      781:   56:    entry->key = key;
+      781:   57:    entry->value = value;
+      781:   58:    entry->next = next;
+      781:   59:    return entry;
+      781:   59-block  0
+unconditional  0 taken 781
+        -:   60:}
+        -:   61:
+        -:   62:/*
+        -:   63:Returns: The entry before key, if key exists
+        -:   64:         else, the entry that "should" be before key
+        -:   65:*/
+function find_previous_entry_for_key called 390 returned 100% blocks executed 100%
+      390:   66:static ioopm_entry_t *find_previous_entry_for_key(elem_t key, ioopm_eq_function_key key_cmp, ioopm_entry_t *cursor)
+      390:   66-block  0
+        -:   67:{
+      390:   68: ioopm_entry_t *tmp = cursor->next;
+      424:   69: while (tmp != NULL)
+      390:   69-block  0
+unconditional  0 taken 390
+      424:   69-block  1
+branch  1 taken 210
+branch  2 taken 214 (fallthrough)
+        -:   70: {
+      210:   71:    if (key_cmp(tmp->key, key) >= 0){
+      210:   71-block  0
+call    0 returned 210
+branch  1 taken 176 (fallthrough)
+branch  2 taken 34
+      176:   72:      return cursor;
+      176:   72-block  0
+unconditional  0 taken 176
+        -:   73:      }
+       34:   74:  cursor = tmp;
+       34:   75:  tmp = cursor->next;
+       34:   75-block  0
+unconditional  0 taken 34
+        -:   76: }
+      214:   77:  return cursor;
+      214:   77-block  0
+unconditional  0 taken 214
+        -:   78:}
+        -:   79:
+function reorder_entrys called 25 returned 100% blocks executed 100%
+       25:   80:static void reorder_entrys(ioopm_hash_table_t *ht, size_t old_capacity){
+       25:   80-block  0
+       25:   81:  size_t new_capacity = ht->capacity;
+       25:   82:  hash_function hash_fun = ht->hash_function;
+       25:   83:  ioopm_eq_function_key key_cmp = ht->key_cmp;
+        -:   84:  //Goes over each old bucket, the new ones only consist of dummys
+      318:   85:  for(int i = 0; i<old_capacity; ++i){
+       25:   85-block  0
+unconditional  0 taken 25
+      293:   85-block  1
+unconditional  1 taken 293
+      318:   85-block  2
+branch  2 taken 293
+branch  3 taken 25 (fallthrough)
+      293:   86:    ioopm_entry_t *pre_entry_old = ht->buckets[i];
+      293:   87:    ioopm_entry_t *entry = pre_entry_old->next;
+      524:   88:    while (entry != NULL)
+      293:   88-block  0
+unconditional  0 taken 293
+      524:   88-block  1
+branch  1 taken 231
+branch  2 taken 293 (fallthrough)
+        -:   89:    {
+      231:   90:      int new_bucket = possitve_modulo(hash_fun(entry->key),new_capacity);
+      231:   90-block  0
+call    0 returned 231
+call    1 returned 231
+      231:   91:      ioopm_entry_t *next_entry_old = entry->next;
+        -:   92:      //If entry is not placed in the right bucket, move to the right bucket
+      231:   93:      if(new_bucket!=i){
+branch  0 taken 13 (fallthrough)
+branch  1 taken 218
+       13:   94:        ioopm_entry_t *pre_entry_new = find_previous_entry_for_key(entry->key, key_cmp, ht->buckets[new_bucket]);
+       13:   94-block  0
+call    0 returned 13
+       13:   95:        ioopm_entry_t *next_entry_new = pre_entry_new->next;
+       13:   96:        pre_entry_new->next = entry;                     // Places entry in new bucket
+       13:   97:        entry->next = next_entry_new;                    // Update entrys new next
+        -:   98:        
+        -:   99:        //remove entry from previous bucket 
+       13:  100:        pre_entry_old->next = next_entry_old;  
+unconditional  0 taken 13
+        -:  101:      }
+        -:  102:      //If entry is placed in the right bucket, move to the next entry
+      218:  103:      else pre_entry_old = entry;
+      218:  103-block  0
+unconditional  0 taken 218
+      231:  104:      entry = next_entry_old;   
+      231:  104-block  0
+unconditional  0 taken 231
+        -:  105:    }
+        -:  106:  }
+       25:  107:}
+        -:  108:
+function create_buckets called 25 returned 100% blocks executed 100%
+       25:  109:static void create_buckets(ioopm_entry_t **buckets_test, ioopm_hash_table_t *ht, size_t old_capacity){
+       25:  109-block  0
+       25:  110:  size_t new_capacity = ht->capacity;
+       25:  111:  buckets_test = (ioopm_entry_t**)realloc(buckets_test, new_capacity*sizeof(ioopm_entry_t*));
+      613:  112:   for (int i = old_capacity; i <  new_capacity; i++)
+       25:  112-block  0
+unconditional  0 taken 25
+unconditional  1 taken 588
+      613:  112-block  1
+branch  2 taken 588
+branch  3 taken 25 (fallthrough)
+        -:  113:    {
+      588:  114:      buckets_test[i] = entry_create(int_elem(0),ptr_elem(NULL),NULL);
+      588:  114-block  0
+call    0 returned 588
+        -:  115:    }
+       25:  116:  (ht->buckets) = buckets_test;
+       25:  117:}
+        -:  118:
+        -:  119://Allocates new buckets and reorder entrys
+function ioopm_hash_table_resize called 25 returned 100% blocks executed 100%
+       25:  120:void ioopm_hash_table_resize(ioopm_hash_table_t *ht){
+       25:  120-block  0
+       25:  121:size_t old_capacity = ht->capacity;
+       25:  122:  size_t primes[] = {0, 17, 31, 67, 127, 257, 509, 1021, 2053, 4099, 8191, 16381};
+       25:  123:  size_t length_primes = 11;
+       25:  124:  size_t new_capacity = 0;
+        -:  125:  //Findes a new prime bucket size
+      300:  126:  for (size_t i = 0; i<length_primes; i++)
+       25:  126-block  0
+unconditional  0 taken 25
+      275:  126-block  1
+unconditional  1 taken 275
+      300:  126-block  2
+branch  2 taken 275
+branch  3 taken 25 (fallthrough)
+        -:  127:    {
+      275:  128:     if (primes[i] == old_capacity){
+      275:  128-block  0
+branch  0 taken 25 (fallthrough)
+branch  1 taken 250
+       25:  129:     new_capacity = primes[i+1];
+       25:  130:     ht->capacity = new_capacity;
+       25:  130-block  0
+unconditional  0 taken 25
+        -:  131:     }
+        -:  132:    }
+       25:  133:  create_buckets(ht->buckets,ht, old_capacity);
+       25:  133-block  0
+call    0 returned 25
+       25:  134:  reorder_entrys(ht, old_capacity);
+call    0 returned 25
+       25:  135:}
+        -:  136:
+        -:  137:
+        -:  138:
+function ioopm_hash_table_create called 18 returned 100% blocks executed 100%
+       18:  139:ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function value_cmp, ioopm_eq_function_key key_cmp){
+       18:  139-block  0
+        -:  140:  /// Allocate space for a ioopm_hash_table_t = No_Buckets pointers to ioopm_entry_t's
+       18:  141:  ioopm_hash_table_t *result = calloc(1, sizeof(ioopm_hash_table_t));
+       18:  142:  result->capacity = 0;
+       18:  143:  result->hash_function = hash_func; 
+       18:  144:  result->value_cmp = value_cmp;       
+       18:  145:  result->key_cmp = key_cmp;
+       18:  146:  ioopm_hash_table_resize(result);
+       18:  146-block  0
+call    0 returned 18
+       18:  147:  return result;
+unconditional  0 taken 18
+        -:  148:}
+        -:  149:
+        -:  150://Change the value of an existing key
+function update_entry_value called 3 returned 100% blocks executed 100%
+        3:  151:static void update_entry_value(elem_t value, ioopm_entry_t *entry){
+        3:  151-block  0
+        3:  152:    entry->value = value;
+        3:  153:}
+        -:  154:
+function ioopm_hash_table_insert called 196 returned 100% blocks executed 100%
+      196:  155:void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value){
+      196:  155-block  0
+        -:  156:
+      196:  157:  if (ioopm_hash_table_size(ht) >= Load_Factor*ht->capacity){
+      196:  157-block  0
+call    0 returned 196
+branch  1 taken 7 (fallthrough)
+branch  2 taken 189
+        7:  158:    ioopm_hash_table_resize(ht);
+        7:  158-block  0
+call    0 returned 7
+unconditional  1 taken 7
+        -:  159:  }
+        -:  160:
+        -:  161:  /// Calculate the right bucket for entry
+      196:  162:  hash_function hash_func = ht->hash_function;
+      196:  163:  ioopm_eq_function_key key_cmp = ht->key_cmp;
+      196:  164:  int hashed_key = hash_func(key);
+      196:  164-block  0
+call    0 returned 196
+      196:  165:  int bucket = possitve_modulo(hashed_key, ht->capacity);
+call    0 returned 196
+        -:  166:
+      196:  167:  ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);
+call    0 returned 196
+      196:  168:  ioopm_entry_t *cur_entry = pre_entry->next;
+        -:  169:
+        -:  170:  // Updates value if key already exists
+      196:  171:  if(cur_entry != NULL && 0==key_cmp(key, cur_entry->key)){ 
+branch  0 taken 5 (fallthrough)
+branch  1 taken 191
+        5:  171-block  0
+call    2 returned 5
+branch  3 taken 3 (fallthrough)
+branch  4 taken 2
+        3:  172:    update_entry_value(value, pre_entry->next);
+        3:  172-block  0
+call    0 returned 3
+unconditional  1 taken 3
+        -:  173:  }
+        -:  174:  else{// Add a new entry and place it in right position
+      193:  175:  cur_entry = entry_create(key,value,pre_entry->next); 
+      193:  175-block  0
+call    0 returned 193
+      193:  176:  pre_entry->next = cur_entry;
+unconditional  0 taken 193
+        -:  177:  }
+      196:  178:}
+        -:  179:
+function ioopm_hash_table_lookup called 175 returned 100% blocks executed 100%
+      175:  180:elem_t ioopm_hash_table_lookup(ioopm_hash_table_t *ht, elem_t key, bool *success){
+      175:  180-block  0
+      175:  181:  hash_function hash_func = ht->hash_function;
+      175:  182:  ioopm_eq_function_key key_cmp = ht->key_cmp;
+      175:  183:  int bucket = possitve_modulo(hash_func(key), ht->capacity);
+      175:  183-block  0
+call    0 returned 175
+call    1 returned 175
+      175:  184:  ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp,ht->buckets[bucket]);
+call    0 returned 175
+      175:  185:  ioopm_entry_t *cur_entry = pre_entry->next;
+      175:  186:  if (cur_entry != NULL && 0 == key_cmp(cur_entry->key, key))
+branch  0 taken 167 (fallthrough)
+branch  1 taken 8
+      167:  186-block  0
+call    2 returned 167
+branch  3 taken 167 (fallthrough)
+branch  4 taken 0
+        -:  187:  {
+      167:  188:    *success = true;
+      167:  189:    return cur_entry->value;
+      167:  189-block  0
+unconditional  0 taken 167
+        -:  190:  }
+        8:  191:  *success = false;
+        8:  192:  return ptr_elem(NULL);
+        8:  192-block  0
+unconditional  0 taken 8
+        -:  193:}
+        -:  194:
+        -:  195:// Destory the entry and free its allocated memory
+function entry_destroy called 781 returned 100% blocks executed 100%
+      781:  196:static void entry_destroy(ioopm_entry_t *entry){
+      781:  196-block  0
+      781:  197:    free(entry);
+      781:  198:    entry = NULL;
+      781:  199:}
+        -:  200:
+        -:  201://TODO: felmeddelande om vi vill remova något som inte finns
+function ioopm_hash_table_remove called 6 returned 100% blocks executed 100%
+        6:  202:elem_t ioopm_hash_table_remove(ioopm_hash_table_t *ht, elem_t key, bool *success){
+        6:  202-block  0
+        6:  203:  hash_function hash_func = ht->hash_function;
+        6:  204:  ioopm_eq_function_key key_cmp = ht->key_cmp;
+        -:  205:
+        6:  206:  int bucket = possitve_modulo(hash_func(key), ht->capacity);
+        6:  206-block  0
+call    0 returned 6
+call    1 returned 6
+        -:  207:
+        6:  208:  ioopm_entry_t *pre_entry= find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);
+call    0 returned 6
+        6:  209:  ioopm_entry_t *delete_entry = pre_entry->next;
+        -:  210:
+        -:  211:  //Nothing to delete
+        6:  212:  if(delete_entry == NULL || 0 != key_cmp(delete_entry->key, key)){ 
+branch  0 taken 4 (fallthrough)
+branch  1 taken 2
+        4:  212-block  0
+call    2 returned 4
+branch  3 taken 0 (fallthrough)
+branch  4 taken 4
+        2:  213:    *success = false;
+        2:  214:    return ptr_elem(NULL);
+        2:  214-block  0
+unconditional  0 taken 2
+        -:  215:  }
+        4:  216:  elem_t value_deleted = delete_entry->value;
+        4:  217:  pre_entry->next = delete_entry->next; 
+        4:  218:  entry_destroy(delete_entry);
+        4:  218-block  0
+call    0 returned 4
+        4:  219:  *success = true;
+        6:  220:  return value_deleted;
+unconditional  0 taken 4
+        6:  220-block  0
+unconditional  1 taken 6
+        -:  221:}
+        -:  222:
+        -:  223:// Iterate and call entry_destroy over each individual entry in a bucket
+function bucket_destroy called 593 returned 100% blocks executed 100%
+      593:  224:static void bucket_destroy(ioopm_entry_t *current_entry)
+      593:  224-block  0
+        -:  225:{
+      593:  226:  ioopm_entry_t *next_entry = NULL;
+      777:  227:   while (current_entry->next != NULL)
+      593:  227-block  0
+unconditional  0 taken 593
+      777:  227-block  1
+branch  1 taken 184
+branch  2 taken 593 (fallthrough)
+        -:  228: {
+      184:  229:   next_entry = current_entry->next;
+      184:  230:   entry_destroy(current_entry);
+      184:  230-block  0
+call    0 returned 184
+      184:  231:   current_entry = next_entry;
+unconditional  0 taken 184
+        -:  232: }
+      593:  233: entry_destroy(current_entry);
+      593:  233-block  0
+call    0 returned 593
+        -:  234: 
+      593:  235:}
+        -:  236:
+        -:  237:// Iterate over all buckets and call bucket_destroy for each index
+function ioopm_hash_table_destroy called 18 returned 100% blocks executed 100%
+       18:  238:void ioopm_hash_table_destroy(ioopm_hash_table_t *ht){
+       18:  238-block  0
+      606:  239:  for(int i = 0; i<ht->capacity; ++i){
+       18:  239-block  0
+unconditional  0 taken 18
+unconditional  1 taken 588
+      606:  239-block  1
+branch  2 taken 588
+branch  3 taken 18 (fallthrough)
+      588:  240:    bucket_destroy(ht->buckets[i]);
+      588:  240-block  0
+call    0 returned 588
+        -:  241:  }
+       18:  242:  free(ht->buckets);
+       18:  243:  free(ht);
+       18:  244:  ht->buckets = NULL;
+       18:  245:  ht = NULL;
+       18:  246:}
+        -:  247:
+function ioopm_hash_table_is_empty called 11 returned 100% blocks executed 100%
+       11:  248:bool ioopm_hash_table_is_empty(ioopm_hash_table_t *ht)
+       11:  248-block  0
+        -:  249:{
+      114:  250:  for (int i = 0; i < ht->capacity; ++i)
+       11:  250-block  0
+unconditional  0 taken 11
+      103:  250-block  1
+unconditional  1 taken 103
+      114:  250-block  2
+branch  2 taken 108
+branch  3 taken 6 (fallthrough)
+        -:  251:  {
+      108:  252:    if (ht->buckets[i]->next != NULL)     //If there is an entry besides the dummy
+      108:  252-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 103
+        -:  253:    {
+        5:  254:      return false;
+        5:  254-block  0
+unconditional  0 taken 5
+        -:  255:    }
+        -:  256:  }
+        6:  257:  return true;
+        6:  257-block  0
+unconditional  0 taken 6
+        -:  258:}
+        -:  259:
+function ioopm_hash_table_clear called 5 returned 100% blocks executed 100%
+        5:  260: void ioopm_hash_table_clear(ioopm_hash_table_t *ht)
+        5:  260-block  0
+        -:  261:{
+       90:  262:  for (int i = 0; i < ht->capacity; i++)
+        5:  262-block  0
+unconditional  0 taken 5
+       85:  262-block  1
+unconditional  1 taken 85
+       90:  262-block  2
+branch  2 taken 85
+branch  3 taken 5 (fallthrough)
+        -:  263:  {
+       85:  264:    if(ht->buckets[i]->next != NULL){       //If there is an entry besides the dummy
+       85:  264-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 80
+        5:  265:      bucket_destroy(ht->buckets[i]->next); //Delete all entrys linked to the dummy
+        5:  265-block  0
+call    0 returned 5
+        5:  266:      ht->buckets[i]->next = NULL;
+unconditional  0 taken 5
+        -:  267:    }
+        -:  268:  }
+        5:  269:}
+        -:  270:
+        -:  271:// Go through all entries in a bucket and add 1 to a counter for each entry passed through
+function itterate_over_bucket called 14388 returned 100% blocks executed 100%
+    14388:  272:static void itterate_over_bucket(size_t *counter, ioopm_entry_t *entry)
+    14388:  272-block  0
+        -:  273:{
+    21384:  274:  while (entry->next != NULL)
+    14388:  274-block  0
+unconditional  0 taken 14388
+    21384:  274-block  1
+branch  1 taken 6996
+branch  2 taken 14388 (fallthrough)
+        -:  275:  {
+     6996:  276:    ++*counter;
+     6996:  277:    entry = entry->next;
+     6996:  277-block  0
+unconditional  0 taken 6996
+        -:  278:  }
+    14388:  279:}
+        -:  280:
+        -:  281:// For all buckets call iterate_over_bucket with the adress of a counter
+function ioopm_hash_table_size called 206 returned 100% blocks executed 100%
+      206:  282:size_t ioopm_hash_table_size(ioopm_hash_table_t *ht){
+      206:  282-block  0
+      206:  283: size_t c = 0;
+    14594:  284: for (int i = 0; i < ht->capacity; i++)
+      206:  284-block  0
+unconditional  0 taken 206
+unconditional  1 taken 14388
+    14594:  284-block  1
+branch  2 taken 14388
+branch  3 taken 206 (fallthrough)
+        -:  285: {
+    14388:  286:   ioopm_entry_t *first_entry = ht->buckets[i];
+    14388:  287:   itterate_over_bucket(&c, first_entry);
+    14388:  287-block  0
+call    0 returned 14388
+        -:  288: }
+      206:  289: return c;
+      206:  289-block  0
+unconditional  0 taken 206
+        -:  290:}
+        -:  291:
+function ioopm_hash_table_keys called 2 returned 100% blocks executed 100%
+        2:  292:ioopm_list_t *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
+        2:  292-block  0
+        2:  293:  ioopm_list_t *list = ioopm_linked_list_create(ht->key_cmp);
+        2:  293-block  0
+call    0 returned 2
+        2:  294:  size_t no_keys = ioopm_hash_table_size(ht);
+call    0 returned 2
+        2:  295:  ioopm_entry_t *entry = NULL;
+        -:  296:  // If there exist no keys return the empty linked list;
+        2:  297:  if (no_keys==0)
+branch  0 taken 1 (fallthrough)
+branch  1 taken 1
+        -:  298:  {
+        1:  299:    return list;
+        1:  299-block  0
+unconditional  0 taken 1
+        -:  300:  }
+       18:  301:  for (int i = 0; i < ht->capacity; i++){
+        1:  301-block  0
+unconditional  0 taken 1
+       17:  301-block  1
+unconditional  1 taken 17
+       18:  301-block  2
+branch  2 taken 17
+branch  3 taken 1 (fallthrough)
+       17:  302:     entry = ht->buckets[i]->next;
+       18:  303:     while (entry != NULL){
+       17:  303-block  0
+unconditional  0 taken 17
+       18:  303-block  1
+branch  1 taken 1
+branch  2 taken 17 (fallthrough)
+        1:  304:      ioopm_linked_list_append(list, entry->key);
+        1:  304-block  0
+call    0 returned 1
+        1:  305:      entry = entry->next;
+unconditional  0 taken 1
+        -:  306:    }
+        -:  307:  }
+        1:  308:  return list;
+        1:  308-block  0
+unconditional  0 taken 1
+        -:  309:}
+        -:  310:
+        -:  311:
+function ioopm_hash_table_values called 2 returned 100% blocks executed 100%
+        2:  312:ioopm_list_t *ioopm_hash_table_values(ioopm_hash_table_t *ht){
+        2:  312-block  0
+        2:  313:  ioopm_list_t *list = ioopm_linked_list_create(ht->value_cmp);
+        2:  313-block  0
+call    0 returned 2
+        2:  314:  size_t no_values = ioopm_hash_table_size(ht);
+call    0 returned 2
+        2:  315:  ioopm_entry_t *entry = NULL;
+        -:  316:  // If there exist no keys return the empty linked list;
+        2:  317:  if (no_values==0) 
+branch  0 taken 1 (fallthrough)
+branch  1 taken 1
+        -:  318:  {
+        1:  319:    return list;
+        1:  319-block  0
+unconditional  0 taken 1
+        -:  320:  } 
+       18:  321:  for (int i = 0; i < ht->capacity; i++){
+        1:  321-block  0
+unconditional  0 taken 1
+       17:  321-block  1
+unconditional  1 taken 17
+       18:  321-block  2
+branch  2 taken 17
+branch  3 taken 1 (fallthrough)
+       17:  322:    entry = ht->buckets[i]->next;
+       18:  323:    while (entry != NULL){
+       17:  323-block  0
+unconditional  0 taken 17
+       18:  323-block  1
+branch  1 taken 1
+branch  2 taken 17 (fallthrough)
+        1:  324:    ioopm_linked_list_append(list,entry->value);
+        1:  324-block  0
+call    0 returned 1
+        1:  325:    entry = entry->next;
+unconditional  0 taken 1
+        -:  326:    }  
+        -:  327:  }
+        1:  328:  return list;
+        1:  328-block  0
+unconditional  0 taken 1
+        -:  329:}
+        -:  330:
+        -:  331:// Compares a key and a given pointer and check whether they are equal or not
+function key_equiv called 4 returned 100% blocks executed 100%
+        4:  332:static bool key_equiv(elem_t key, elem_t value, void *x,  ioopm_hash_table_t *ht ){
+        4:  332-block  0
+        4:  333:  ioopm_eq_function_key key_cmp = ht->key_cmp;
+        4:  334:  elem_t *other_key_ptr = x;
+        4:  335:  elem_t other_key = *other_key_ptr;
+        4:  336:  return (0==key_cmp(key, other_key));
+        4:  336-block  0
+call    0 returned 4
+unconditional  1 taken 4
+        -:  337:}
+        -:  338:
+        -:  339://Checks equaltiy of a given value and a void pointer(value)
+function value_equiv called 7 returned 100% blocks executed 100%
+        7:  340:static bool value_equiv(elem_t key, elem_t value, void *x, ioopm_hash_table_t *ht){
+        7:  340-block  0
+        7:  341:  ioopm_eq_function value_cmp = ht->value_cmp;
+        7:  342:  elem_t *other_value_ptr = x;
+        7:  343:  elem_t other_value = *other_value_ptr;
+        7:  344:  return value_cmp(value, other_value);
+        7:  344-block  0
+call    0 returned 7
+unconditional  1 taken 7
+        -:  345:}
+        -:  346:
+function ioopm_hash_table_any called 10 returned 100% blocks executed 100%
+       10:  347:bool ioopm_hash_table_any(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg){
+       10:  347-block  0
+       10:  348:  ioopm_entry_t *entry = NULL; 
+       95:  349:  for (size_t i = 0; i < ht->capacity; i++){
+       10:  349-block  0
+unconditional  0 taken 10
+       85:  349-block  1
+unconditional  1 taken 85
+       95:  349-block  2
+branch  2 taken 90
+branch  3 taken 5 (fallthrough)
+       90:  350:    entry = ht->buckets[i]->next;
+       96:  351:    while (entry!=NULL){
+       90:  351-block  0
+unconditional  0 taken 90
+       96:  351-block  1
+branch  1 taken 11
+branch  2 taken 85 (fallthrough)
+        -:  352:      // For each entry apply the given condition and check if ANY of them is true
+       11:  353:      if (pred(entry->key, entry->value, arg, ht)){
+       11:  353-block  0
+call    0 returned 11
+branch  1 taken 5 (fallthrough)
+branch  2 taken 6
+        5:  354:        return true;
+        5:  354-block  0
+unconditional  0 taken 5
+        -:  355:      }
+        6:  356:      entry = entry->next;
+        6:  356-block  0
+unconditional  0 taken 6
+        -:  357:    }
+        -:  358:  }
+        5:  359:  return false;
+        5:  359-block  0
+unconditional  0 taken 5
+        -:  360:}
+        -:  361:
+function ioopm_hash_table_all called 6 returned 100% blocks executed 100%
+        6:  362:bool ioopm_hash_table_all(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg){
+        6:  362-block  0
+        6:  363:  ioopm_entry_t *entry = NULL;
+        6:  364:  if(ioopm_hash_table_is_empty(ht)){
+        6:  364-block  0
+call    0 returned 6
+branch  1 taken 2 (fallthrough)
+branch  2 taken 4
+        2:  365:    return false;
+        2:  365-block  0
+unconditional  0 taken 2
+        -:  366:  } 
+       38:  367:  for (int i = 0; i < ht->capacity; i++){
+        4:  367-block  0
+unconditional  0 taken 4
+       34:  367-block  1
+unconditional  1 taken 34
+       38:  367-block  2
+branch  2 taken 36
+branch  3 taken 2 (fallthrough)
+       36:  368:    entry  = ht->buckets[i]->next;
+       45:  369:    while (entry!=NULL){
+       36:  369-block  0
+unconditional  0 taken 36
+       45:  369-block  1
+branch  1 taken 11
+branch  2 taken 34 (fallthrough)
+        -:  370:      // For each entry apply the given condition and check if ANY of them is false
+       11:  371:      if(!pred(entry->key, entry->value, arg, ht)){
+       11:  371-block  0
+call    0 returned 11
+branch  1 taken 2 (fallthrough)
+branch  2 taken 9
+        2:  372:        return false;
+        2:  372-block  0
+unconditional  0 taken 2
+        -:  373:      }
+        9:  374:      entry = entry->next;
+        9:  374-block  0
+unconditional  0 taken 9
+        -:  375:    }
+        -:  376:  }
+        2:  377:  return true;
+        2:  377-block  0
+unconditional  0 taken 2
+        -:  378:}
+        -:  379:
+function ioopm_hash_table_has_value called 5 returned 100% blocks executed 100%
+        5:  380:bool ioopm_hash_table_has_value(ioopm_hash_table_t *ht, elem_t value){
+        5:  380-block  0
+        5:  381:  return ioopm_hash_table_any(ht, value_equiv, &value);
+        5:  381-block  0
+call    0 returned 5
+        -:  382:}
+        -:  383:
+function ioopm_hash_table_has_key called 5 returned 100% blocks executed 100%
+        5:  384:bool ioopm_hash_table_has_key(ioopm_hash_table_t *ht, elem_t key){
+        5:  384-block  0
+        5:  385:  return ioopm_hash_table_any(ht, key_equiv, &key);
+        5:  385-block  0
+call    0 returned 5
+        -:  386:}
+        -:  387:
+function ioopm_hash_table_apply_to_all called 2 returned 100% blocks executed 100%
+        2:  388:void ioopm_hash_table_apply_to_all(ioopm_hash_table_t *ht, ioopm_apply_function apply_fun, void *arg){
+        2:  388-block  0
+        2:  389:  ioopm_entry_t *entry = NULL;
+        2:  390:  elem_t *value_p = calloc(1,sizeof(elem_t));
+        -:  391:
+       36:  392:  for (size_t i = 0; i < ht->capacity; i++){
+        2:  392-block  0
+unconditional  0 taken 2
+       34:  392-block  1
+unconditional  1 taken 34
+       36:  392-block  2
+branch  2 taken 34
+branch  3 taken 2 (fallthrough)
+       34:  393:    entry = ht->buckets[i]->next;
+       38:  394:    while (entry!=NULL){
+       34:  394-block  0
+unconditional  0 taken 34
+       38:  394-block  1
+branch  1 taken 4
+branch  2 taken 34 (fallthrough)
+        4:  395:      *value_p = entry->value;
+        -:  396:      //For each entry apply the given function on its value
+        4:  397:      (apply_fun(entry->key, value_p, arg));
+        4:  397-block  0
+call    0 returned 4
+        4:  398:      entry->value = *value_p;
+        4:  399:      entry = entry->next;
+unconditional  0 taken 4
+        -:  400:    }
+        -:  401:  }
+        2:  402:  free(value_p);
+        2:  403:  value_p = NULL;
+        2:  404:}
+        -:  405:
+function ioopm_hash_table_capacity called 2 returned 100% blocks executed 100%
+        2:  406:size_t ioopm_hash_table_capacity(ioopm_hash_table_t *ht){
+        2:  406-block  0
+        2:  407:  return ht->capacity;
+        2:  407-block  0
+unconditional  0 taken 2
+        -:  408:}

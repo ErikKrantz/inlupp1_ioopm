@@ -199,9 +199,10 @@ void test_lookup(void){
 
 void test_remove(void){
     ioopm_hash_table_t* ht = ioopm_hash_table_create(get_int_hash_key, string_value_cmp, int_key_cmp);
-
+    bool success = true;
     //check removal av icke-existerande entry i tom ht
-    CU_ASSERT_PTR_NULL(ioopm_hash_table_remove(ht,int_elem(5)).s);
+    CU_ASSERT_PTR_NULL(ioopm_hash_table_remove(ht,int_elem(5), &success).s);
+    CU_ASSERT_FALSE(success);
 
     ioopm_hash_table_insert(ht,int_elem(1),str_elem("b"));
     ioopm_hash_table_insert(ht,int_elem(-16),str_elem("a"));
@@ -209,17 +210,21 @@ void test_remove(void){
     
   
     //check removal i mitten
-    CU_ASSERT_STRING_EQUAL(ioopm_hash_table_remove(ht,int_elem(1)).s, "b"); 
+    CU_ASSERT_STRING_EQUAL(ioopm_hash_table_remove(ht,int_elem(1), &success).s, "b"); 
+    CU_ASSERT(success);
 
     //check removal i början
-    CU_ASSERT_STRING_EQUAL(ioopm_hash_table_remove(ht,int_elem(-16)).s, "a"); 
-    
+    CU_ASSERT_STRING_EQUAL(ioopm_hash_table_remove(ht,int_elem(-16), &success).s, "a"); 
+    CU_ASSERT(success);
+
     //check removal i slutet
-    CU_ASSERT_STRING_EQUAL(ioopm_hash_table_remove(ht,int_elem(18)).s, "c"); 
-    
+    CU_ASSERT_STRING_EQUAL(ioopm_hash_table_remove(ht,int_elem(18), &success).s, "c"); 
+    CU_ASSERT(success);
+
     //check removal av icke-existerande entry som har funnits
-    CU_ASSERT_PTR_NULL(ioopm_hash_table_remove(ht,int_elem(1)).s);
-    
+    CU_ASSERT_PTR_NULL(ioopm_hash_table_remove(ht,int_elem(1), &success).s);
+    CU_ASSERT_FALSE(success);
+
     ioopm_hash_table_destroy(ht);
 }
 
@@ -300,7 +305,8 @@ void test_table_keys(){
   keys = ioopm_hash_table_keys(ht);
   size_t key_amount = 1;
   CU_ASSERT_EQUAL(ioopm_linked_list_size(keys), key_amount);
-  
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(keys,0).s,10);
+
   ioopm_linked_list_destroy(keys);
   
   ioopm_hash_table_destroy(ht);
@@ -317,9 +323,10 @@ void test_table_values(){
     
   // Test non-empty hash table
   ioopm_hash_table_insert(ht,int_elem(10),str_elem("a"));
-  values = ioopm_hash_table_keys(ht);
+  values = ioopm_hash_table_values(ht);
   
   CU_ASSERT_EQUAL(ioopm_linked_list_size(values), 1);
+  CU_ASSERT_EQUAL(ioopm_linked_list_get(values,0).s,"a");
   ioopm_linked_list_destroy(values);
 
   ioopm_hash_table_destroy(ht);
@@ -341,8 +348,10 @@ void test_has_key(){
   test = ioopm_hash_table_has_key(ht,int_elem(34));
   CU_ASSERT(test);
   
+  bool success = false;
   // Check after removal
-  ioopm_hash_table_remove(ht, int_elem(17));
+  ioopm_hash_table_remove(ht, int_elem(17), &success);
+  CU_ASSERT(success);
   test = ioopm_hash_table_has_key(ht,int_elem(17));
   CU_ASSERT_FALSE(test);
 
