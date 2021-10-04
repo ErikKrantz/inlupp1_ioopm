@@ -42,6 +42,10 @@ static bool value_cmp(elem_t a, elem_t b){
   return !strcmp(a.s,b.s);
 }
 
+static int cmp_str_return_int(elem_t a, elem_t b){
+  return strcmp(a.s,b.s);
+}
+
 // Will not work so consistent for shorter string keys
 int string_sum_hash(elem_t string)
 {
@@ -101,7 +105,7 @@ bool elem_cmp_int (elem_t a, elem_t b){
 }
 
 void test_insert_lookup_str(void){
-    ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, elem_cmp_int, value_cmp);
+    ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, elem_cmp_int, cmp_str_return_int);
     char *keys[No_Buckets] = {"a","b","c","d","e","f","g","h","i","j","k","l","n","o","p","q"};
     bool success = false;
     for (int i = 0; i<16; i++)
@@ -117,7 +121,7 @@ void test_insert_lookup_str(void){
 }
 
 void test_char_for_keys(void){
-  ioopm_hash_table_t* ht = ioopm_hash_table_create(string_sum_hash, key_cmp, value_cmp);
+  ioopm_hash_table_t* ht = ioopm_hash_table_create(string_sum_hash, elem_cmp_int, cmp_str_return_int);
   bool success = true;
   ioopm_hash_table_lookup(ht, str_elem("a"), &success);
   CU_ASSERT_FALSE(success);
@@ -204,7 +208,7 @@ void test_remove(void){
 
 
 void test_hashtable_size(){
-  ioopm_hash_table_t* ht = ioopm_hash_table_create(get_int_hash_key, key_cmp, key_cmp);
+  ioopm_hash_table_t* ht = ioopm_hash_table_create(get_int_hash_key, value_cmp, key_cmp);
 
   ioopm_hash_table_insert(ht,int_elem(1),str_elem("a"));
   ioopm_hash_table_insert(ht,int_elem(-16),str_elem("b"));
