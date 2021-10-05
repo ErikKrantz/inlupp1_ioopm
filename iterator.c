@@ -43,7 +43,6 @@ struct list_iterator
 
 extern int errno;
 
-// Checks if iterator has a next value
 bool ioopm_iterator_has_next(ioopm_list_iterator_t *iter){
 
     if (iter->current->next != NULL){
@@ -52,7 +51,6 @@ bool ioopm_iterator_has_next(ioopm_list_iterator_t *iter){
     return false;
 }
 
-// Will return its current element if next does not exist
 elem_t ioopm_iterator_next(ioopm_list_iterator_t *iter){
     if (ioopm_iterator_has_next(iter)){
         //Update pointer

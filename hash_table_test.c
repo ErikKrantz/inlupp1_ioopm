@@ -434,9 +434,7 @@ void test_apply_to_all(){
 void test_growing_buckets(){
   ioopm_hash_table_t *ht = ioopm_hash_table_create(get_int_hash_key, string_value_cmp, int_key_cmp);
   
-  
   // Add 10 elements and check that buckets has not increased from initial size of 17
-  
   for (int i = 0; i<10; i++)
   {
     ioopm_hash_table_insert(ht,int_elem(i), str_elem("bucket_test"));
@@ -444,7 +442,6 @@ void test_growing_buckets(){
   size_t size_test = 17;
   CU_ASSERT_EQUAL(ioopm_hash_table_capacity(ht), size_test);
 
-  
   // Add 5 additional element to check that passing threshold 12.5 has increased buckets size to 31
   for (int i = 10; i<15; i++)
   {

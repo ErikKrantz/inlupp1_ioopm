@@ -65,7 +65,7 @@ ioopm_list_t *ioopm_linked_list_create(ioopm_eq_function eq_func){
     return list;
 }
 
-//Frees allocated memory by link
+//Frees allocated memory by a link
 static void destroy_link (link_t *link){
     free(link);
     link = NULL;
@@ -93,13 +93,13 @@ void ioopm_linked_list_append(ioopm_list_t *list, elem_t value){
 void ioopm_linked_list_prepend(ioopm_list_t *list, elem_t value){
     link_t *first_link = create_link(value,list->first->next); //first element is dummy
     list->first->next = first_link;
-    if(first_link->next==NULL){ //om vi lägger till ett link först i en tom lista blir den också sist
+    if(first_link->next==NULL){ //when prepending a link to en empty list, that link becomes last as well
         list->last = first_link;
     }
     list->size +=1;
 }
 
-// find_prev_link antar ett korrekt index
+// Finds a previous link based on index, assumes that index exists
 static link_t *find_previous_link(ioopm_list_t *list, int index){
     link_t *pre_link = list->first;
     for(int i = 0; i < index; i++){
@@ -108,7 +108,6 @@ static link_t *find_previous_link(ioopm_list_t *list, int index){
     return pre_link;
 }
 
-//funktionen antar ett correct index
 void ioopm_linked_list_insert(ioopm_list_t *list, int index, elem_t value){
    
     link_t *pre_link = find_previous_link(list,index);
@@ -124,12 +123,11 @@ void ioopm_linked_list_insert(ioopm_list_t *list, int index, elem_t value){
 elem_t ioopm_linked_list_remove(ioopm_list_t *list, int index){
     link_t *pre_link = find_previous_link(list, index);
 
-    // hitta linken som ska tas bort
     link_t *remove_link = pre_link->next;
 
     list->size -=1;
 
-    // kolla ifall remove link är last
+    // if remove_link is last, also change last pointer
     if (remove_link->next==NULL){
         list->last = pre_link;   
         pre_link->next = NULL;
@@ -138,19 +136,14 @@ elem_t ioopm_linked_list_remove(ioopm_list_t *list, int index){
         return value;
     }
 
-    // ersätt länken innans next med den
+    // remove link from list att free allocated memory
     pre_link->next = remove_link->next;
-
     elem_t value = remove_link->element;
-
-    // destroy the link
     destroy_link(remove_link);
 
-    // returnera elementet för remove_link
     return value;
 }
 
-// Only accepts valid indexes
 elem_t ioopm_linked_list_get(ioopm_list_t *list, int index){
     link_t *pre_link = find_previous_link(list, index);
 
@@ -165,7 +158,6 @@ bool ioopm_linked_list_contains(ioopm_list_t *list, elem_t element){
     {
       if (cmp(cursor->element, element)) return true;
     }
-
   return false;
 }
 
@@ -186,9 +178,9 @@ bool ioopm_linked_list_is_empty(ioopm_list_t *list){
 
 
 void ioopm_linked_list_clear(ioopm_list_t *list){
-    
     link_t *current_link = list->first->next;
     link_t *next_link;
+
     while(current_link != NULL){
         next_link = current_link->next;
         destroy_link(current_link);
@@ -199,7 +191,6 @@ void ioopm_linked_list_clear(ioopm_list_t *list){
 }
 
 bool ioopm_linked_list_all(ioopm_list_t *list, ioopm_char_predicate prop, void *extra){
-    
     if (ioopm_linked_list_is_empty(list)) {
         return false;
     }

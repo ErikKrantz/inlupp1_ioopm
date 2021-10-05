@@ -240,8 +240,8 @@ void ioopm_hash_table_destroy(ioopm_hash_table_t *ht){
     bucket_destroy(ht->buckets[i]);
   }
   free(ht->buckets);
+  ht->buckets=NULL;
   free(ht);
-  ht->buckets = NULL;
   ht = NULL;
 }
 

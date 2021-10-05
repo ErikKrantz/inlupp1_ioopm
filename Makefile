@@ -53,7 +53,7 @@ valgrind_hash: test_hash
 	$(C_VALGRIND) ./test -g
 
 valgrind_read: runread
-	$(C_VALGRIND) ./test -g
+	$(C_VALGRIND) ./run -g
 
 coverage_hash: hash_table_test.c hash_table.c
 	$(C_COVERAGE) hash_table_test.c hash_table.c
@@ -71,4 +71,4 @@ myprog.final: file1.o file2.o file3.o
 # TODO: add e.g. optimisation flags, remove unnecessary linking, etc.
 
 clean:
-	rm -f *.o myprog
+	rm -f *.o
