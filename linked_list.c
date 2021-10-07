@@ -7,17 +7,6 @@
 
 typedef struct link link_t;
 
-union elem
-{
-  int i;
-  unsigned int u;
-  bool b;
-  float f;
-  void *p;
-  char c;
-  char *s;
-};
-
 struct link
 {
     elem_t element;

@@ -1,5 +1,6 @@
 #pragma once
 #include <stdbool.h>
+#include "common.h"
 #include "linked_list.h"
 
 
@@ -17,7 +18,6 @@
  */
 
 
-typedef struct entry ioopm_entry_t; //TODO make this private?
 typedef struct hash_table ioopm_hash_table_t;
 
 typedef bool(*ioopm_predicate)(elem_t key, elem_t value, void *extra, ioopm_hash_table_t *ht);
@@ -31,7 +31,7 @@ typedef int(*ioopm_eq_function_key)(elem_t a, elem_t b);
 /// @param elem_cmp the function to compare values
 /// @param key_cmp the function to compare keys
 //@return A new empty hash table
-ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function elem_cmp, ioopm_eq_function_key key_cmp);
+ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function value_cmp, ioopm_eq_function_key key_cmp);
 
 ///@brief Delete a hash table and free its memory
 ///@param ht a hash table to be deleted

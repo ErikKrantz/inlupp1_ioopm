@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include "linked_list.h"
+#include "common.h"
 
 /// @brief Checks if there are more elements to iterate over
 /// @param iter the iterator
@@ -8,10 +9,10 @@
 bool ioopm_iterator_has_next(ioopm_list_iterator_t *iter);
 
 /// @brief Step the iterator forward one step
-/// @brief If there is no next the global errno value will be updated with an I/O-error type.
 /// @param iter the iterator
+/// @param succes bool will be changed to true if key exists, else false
 /// @return the next element
-elem_t ioopm_iterator_next(ioopm_list_iterator_t *iter);
+elem_t ioopm_iterator_next(ioopm_list_iterator_t *iter, bool *success);
 
 /// NOTE: REMOVE IS OPTIONAL TO IMPLEMENT 
 /// @brief Remove the current element from the underlying list

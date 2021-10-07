@@ -2,11 +2,23 @@
 Inlupp 1 ioopm
 
 **HOW TO USE THE PROGRAM**
+# Compiling code: (assuming you add a mainfile for the first three, i.e hash_table.c, linked_list.c etc.)
+> make runhash
+> make runlinked
+> make runiterator
+> make runread
+
+# Running code: for the first three files
+>./run
+
+# Running code: for running readfile.c
+>./run filename.txt
 
 # Compiling tests:
 > make test_hash
 > make test_linked
 > make test_iterator
+
 # Running tests:
 > ./test
 
@@ -14,14 +26,26 @@ Inlupp 1 ioopm
 > make valgrind_hash
 > make valgrind_linked 
 > make valgrind_iterator
+> make valgrind_read filename.txt
+
 # Running coverage:
 > make coverage_hash
 > make coverage_linked
 > make coverage_iterator
 
+# Cleaning unused test files
+> make clean
+
+**END OF PROGRAM USAGE**
+
+# Summary
+- Errors are hadled by a bool pointer that the functions changes to true or false
+- The hash table does not take ownership of the data of its keys and value
+
+
 Questions to be answered:
 2. For each input, what are the top 3 functions in your code (that you have written), or is it library functions?
-
+Our code
 
 **TOPP 3 FUNCTIONS FOR EACH INPUT:**
 Small.txt

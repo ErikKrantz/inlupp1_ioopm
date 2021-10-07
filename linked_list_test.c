@@ -14,16 +14,6 @@ int clean_suite(void)
   return 0;
 }
 
-union elem
-{
-  /// TODO: update the names of the fields to something better? 
-  int i;
-  unsigned int u;
-  bool b;
-  float f;
-  void *p;
-};
-
 bool compare_int_elements(elem_t a, elem_t b)
 {
   return (0 == b.i - a.i);

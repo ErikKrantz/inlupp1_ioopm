@@ -8,17 +8,6 @@
 
 #define Delimiters "+-#@()[]{}.,:;!? \t\n\r"
 
-union elem
-{
-  int i;
-  unsigned int u;
-  bool b;
-  float f;
-  void *p;
-  //char c;
-  char *s;
-};
-
 //compares p1 and p2 as strings
 static int cmpstringp(const void *p1, const void *p2)
 {
@@ -126,10 +115,7 @@ int main(int argc, char *argv[])
       int freq = (ioopm_hash_table_lookup(ht, str_elem(keys_array[i]), &success)).i;
       printf("%s: %d\n", keys_array[i], freq);
     }
-    //TODO: remove?
-   /* for (int i = 0; i < size; i++){
-      ioopm_linked_list_get(keys,i);
-    }*/
+    
     ioopm_linked_list_destroy(keys);
 
   }

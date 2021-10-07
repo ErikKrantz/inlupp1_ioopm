@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
-#include "linked_list.h"
 #include "iterator.h"
 
 int init_suite(void)
@@ -15,20 +14,10 @@ int clean_suite(void)
   return 0;
 }
 
-union elem
-{
-  int i;
-  unsigned int u;
-  bool b;
-  float f;
-  void *p;
-  char *s;
-};
-
 void test_has_next(void){
     ioopm_list_t *list = ioopm_linked_list_create();
     ioopm_list_iterator_t *iter = ioopm_list_iterator(list);
-
+    bool success = false;
     //Test next in empty list
     CU_ASSERT_FALSE(ioopm_iterator_has_next(iter));
     ioopm_iterator_destroy(iter);
@@ -39,7 +28,7 @@ void test_has_next(void){
     CU_ASSERT(ioopm_iterator_has_next(iter));
     
     //test next standing on the last element in a list
-    ioopm_iterator_next(iter);
+    ioopm_iterator_next(iter,&success);
     CU_ASSERT_FALSE(ioopm_iterator_has_next(iter));
 
     ioopm_iterator_destroy(iter);
@@ -51,11 +40,14 @@ void test_next(void)
     ioopm_list_t *list = ioopm_linked_list_create();
 
     //Test iterating over a list
+    bool success = false;
     ioopm_linked_list_insert(list,0,int_elem(20));
     ioopm_linked_list_insert(list,0,int_elem(10));
     ioopm_list_iterator_t *iter =  ioopm_list_iterator(list);
-    CU_ASSERT(ioopm_iterator_next(iter).i == 10);
-    CU_ASSERT(ioopm_iterator_next(iter).i == 20);
+    CU_ASSERT(ioopm_iterator_next(iter, &success).i == 10);
+    CU_ASSERT(success);
+    CU_ASSERT(ioopm_iterator_next(iter, &success).i == 20);
+    CU_ASSERT(success);
 
     ioopm_iterator_destroy(iter);
     ioopm_linked_list_destroy(list);
@@ -67,7 +59,8 @@ void test_reset(void)
   ioopm_linked_list_insert(list,0,int_elem(20));
   ioopm_list_iterator_t *iter = ioopm_list_iterator(list);
   //moves iter to last link
-  ioopm_iterator_next(iter);
+  bool success = false;
+  ioopm_iterator_next(iter, &success);
   //copy is at last link
   ioopm_list_iterator_t *copy = iter;
   //placing iter back to first link
@@ -80,7 +73,8 @@ void test_current(void){
   ioopm_linked_list_insert(list,0,int_elem(20));
   ioopm_list_iterator_t *iter = ioopm_list_iterator(list);
   //moves iter from dummy to first "real" linkmake
-  ioopm_iterator_next(iter);
+  bool success = false;
+  ioopm_iterator_next(iter, &success);
   CU_ASSERT(ioopm_iterator_current(iter).i == 20);
   
   ioopm_iterator_destroy(iter);

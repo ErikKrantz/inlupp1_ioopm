@@ -18,18 +18,6 @@ int clean_suite(void)
   return 0;
 }
 
-union elem
-{
-  /// TODO: update the names of the fields to something better? 
-  int i;
-  unsigned int u;
-  bool b;
-  float f;
-  void *p;
-  //char c;
-  char *s;
-};
-
 static int get_int_hash_key(elem_t key){
   return key.i;
 }

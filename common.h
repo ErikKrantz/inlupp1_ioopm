@@ -9,6 +9,17 @@
 #define char_elem(x) (elem_t) { .c=(x) }
 #define str_elem(x) (elem_t) { .s=(x) }
 
+union elem
+{
+  int i;
+  unsigned int u;
+  bool b;
+  float f;
+  void *p;
+  char c;
+  char *s;
+};
+
 typedef union elem elem_t;
 typedef struct list_iterator ioopm_list_iterator_t;
 typedef struct list ioopm_list_t;

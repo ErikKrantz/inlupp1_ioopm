@@ -3,34 +3,18 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
-#include "common.h"
 #include "hash_table.h"
 
 #define Inital_capacity 17
 #define _XOPEN_SOURCE 700
 #define Load_Factor 0.75
-//#include <errno.h>
-
-// New generic type implementation
-
-union elem
-{
-  /// TODO: update the names of the fields to something better? 
-  int i;
-  unsigned int u;
-  bool b;
-  float f;
-  void *p;
-  char c;
-  char *s;
-};
-
+typedef struct entry entry_t;
 
 struct entry
 {
   elem_t key;       // holds the key
   elem_t value;   // holds the value
-  ioopm_entry_t *next; // points to the next entry (possibly NULL)
+  entry_t *next; // points to the next entry (possibly NULL)
 };
 
 struct hash_table
@@ -39,7 +23,7 @@ struct hash_table
   hash_function hash_function; 
   ioopm_eq_function value_cmp;
   ioopm_eq_function_key key_cmp;
-  ioopm_entry_t **buckets; // OLD: ioopm_entry_t *buckets[No_Buckets];
+  entry_t **buckets; 
 };
 
 static int possitve_modulo (int n, int mod){
@@ -50,9 +34,9 @@ static int possitve_modulo (int n, int mod){
   return n;
 }
 
-static ioopm_entry_t *entry_create(elem_t key, elem_t value, ioopm_entry_t *next)
+static entry_t *entry_create(elem_t key, elem_t value, entry_t *next)
 {
-    ioopm_entry_t *entry = calloc(1, sizeof(ioopm_entry_t));
+    entry_t *entry = calloc(1, sizeof(entry_t));
     entry->key = key;
     entry->value = value;
     entry->next = next;
@@ -63,9 +47,9 @@ static ioopm_entry_t *entry_create(elem_t key, elem_t value, ioopm_entry_t *next
 Returns: The entry before key, if key exists
          else, the entry that "should" be before key
 */
-static ioopm_entry_t *find_previous_entry_for_key(elem_t key, ioopm_eq_function_key key_cmp, ioopm_entry_t *cursor)
+static entry_t *find_previous_entry_for_key(elem_t key, ioopm_eq_function_key key_cmp, entry_t *cursor)
 {
- ioopm_entry_t *tmp = cursor->next;
+ entry_t *tmp = cursor->next;
  while (tmp != NULL)
  {
     if (key_cmp(tmp->key, key) >= 0){
@@ -83,16 +67,16 @@ static void reorder_entrys(ioopm_hash_table_t *ht, size_t old_capacity){
   ioopm_eq_function_key key_cmp = ht->key_cmp;
   //Goes over each old bucket, the new ones only consist of dummys
   for(int i = 0; i<old_capacity; ++i){
-    ioopm_entry_t *pre_entry_old = ht->buckets[i];
-    ioopm_entry_t *entry = pre_entry_old->next;
+    entry_t *pre_entry_old = ht->buckets[i];
+    entry_t *entry = pre_entry_old->next;
     while (entry != NULL)
     {
       int new_bucket = possitve_modulo(hash_fun(entry->key),new_capacity);
-      ioopm_entry_t *next_entry_old = entry->next;
+      entry_t *next_entry_old = entry->next;
       //If entry is not placed in the right bucket, move to the right bucket
       if(new_bucket!=i){
-        ioopm_entry_t *pre_entry_new = find_previous_entry_for_key(entry->key, key_cmp, ht->buckets[new_bucket]);
-        ioopm_entry_t *next_entry_new = pre_entry_new->next;
+        entry_t *pre_entry_new = find_previous_entry_for_key(entry->key, key_cmp, ht->buckets[new_bucket]);
+        entry_t *next_entry_new = pre_entry_new->next;
         pre_entry_new->next = entry;                     // Places entry in new bucket
         entry->next = next_entry_new;                    // Update entrys new next
         
@@ -106,18 +90,20 @@ static void reorder_entrys(ioopm_hash_table_t *ht, size_t old_capacity){
   }
 }
 
-static void create_buckets(ioopm_entry_t **buckets_test, ioopm_hash_table_t *ht, size_t old_capacity){
+//Allocates memory for new buckets and inserts dummys in those buckets
+static void create_buckets(entry_t **buckets, ioopm_hash_table_t *ht, size_t old_capacity){
   size_t new_capacity = ht->capacity;
-  buckets_test = (ioopm_entry_t**)realloc(buckets_test, new_capacity*sizeof(ioopm_entry_t*));
+  buckets = (entry_t**)realloc(buckets, new_capacity*sizeof(entry_t*));
+  //Creates dummys for new buckets that have been allocated
    for (int i = old_capacity; i <  new_capacity; i++)
     {
-      buckets_test[i] = entry_create(int_elem(0),ptr_elem(NULL),NULL);
+      buckets[i] = entry_create(int_elem(0),ptr_elem(NULL),NULL);
     }
-  (ht->buckets) = buckets_test;
+  (ht->buckets) = buckets;
 }
 
-//Allocates new buckets and reorder entrys
-void ioopm_hash_table_resize(ioopm_hash_table_t *ht){
+//Allocates grows the hash table capacity for buckets, and reorder old entrys 
+static void hash_table_resize(ioopm_hash_table_t *ht){
 size_t old_capacity = ht->capacity;
   size_t primes[] = {0, 17, 31, 67, 127, 257, 509, 1021, 2053, 4099, 8191, 16381};
   size_t length_primes = 11;
@@ -134,28 +120,24 @@ size_t old_capacity = ht->capacity;
   reorder_entrys(ht, old_capacity);
 }
 
-
-
 ioopm_hash_table_t *ioopm_hash_table_create(hash_function hash_func, ioopm_eq_function value_cmp, ioopm_eq_function_key key_cmp){
-  /// Allocate space for a ioopm_hash_table_t = No_Buckets pointers to ioopm_entry_t's
   ioopm_hash_table_t *result = calloc(1, sizeof(ioopm_hash_table_t));
   result->capacity = 0;
   result->hash_function = hash_func; 
   result->value_cmp = value_cmp;       
   result->key_cmp = key_cmp;
-  ioopm_hash_table_resize(result);
+  hash_table_resize(result);
   return result;
 }
 
 //Change the value of an existing key
-static void update_entry_value(elem_t value, ioopm_entry_t *entry){
+static void update_entry_value(elem_t value, entry_t *entry){
     entry->value = value;
 }
 
 void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value){
-
   if (ioopm_hash_table_size(ht) >= Load_Factor*ht->capacity){
-    ioopm_hash_table_resize(ht);
+    hash_table_resize(ht);
   }
 
   /// Calculate the right bucket for entry
@@ -164,8 +146,8 @@ void ioopm_hash_table_insert(ioopm_hash_table_t *ht, elem_t key, elem_t value){
   int hashed_key = hash_func(key);
   int bucket = possitve_modulo(hashed_key, ht->capacity);
 
-  ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);
-  ioopm_entry_t *cur_entry = pre_entry->next;
+  entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);
+  entry_t *cur_entry = pre_entry->next;
 
   // Updates value if key already exists
   if(cur_entry != NULL && 0==key_cmp(key, cur_entry->key)){ 
@@ -181,8 +163,8 @@ elem_t ioopm_hash_table_lookup(ioopm_hash_table_t *ht, elem_t key, bool *success
   hash_function hash_func = ht->hash_function;
   ioopm_eq_function_key key_cmp = ht->key_cmp;
   int bucket = possitve_modulo(hash_func(key), ht->capacity);
-  ioopm_entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp,ht->buckets[bucket]);
-  ioopm_entry_t *cur_entry = pre_entry->next;
+  entry_t *pre_entry = find_previous_entry_for_key(key, key_cmp,ht->buckets[bucket]);
+  entry_t *cur_entry = pre_entry->next;
   if (cur_entry != NULL && 0 == key_cmp(cur_entry->key, key))
   {
     *success = true;
@@ -193,7 +175,7 @@ elem_t ioopm_hash_table_lookup(ioopm_hash_table_t *ht, elem_t key, bool *success
 }
 
 // Destory the entry and free its allocated memory
-static void entry_destroy(ioopm_entry_t *entry){
+static void entry_destroy(entry_t *entry){
     free(entry);
     entry = NULL;
 }
@@ -205,8 +187,8 @@ elem_t ioopm_hash_table_remove(ioopm_hash_table_t *ht, elem_t key, bool *success
 
   int bucket = possitve_modulo(hash_func(key), ht->capacity);
 
-  ioopm_entry_t *pre_entry= find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);
-  ioopm_entry_t *delete_entry = pre_entry->next;
+  entry_t *pre_entry= find_previous_entry_for_key(key, key_cmp, ht->buckets[bucket]);
+  entry_t *delete_entry = pre_entry->next;
 
   //Nothing to delete
   if(delete_entry == NULL || 0 != key_cmp(delete_entry->key, key)){ 
@@ -221,9 +203,9 @@ elem_t ioopm_hash_table_remove(ioopm_hash_table_t *ht, elem_t key, bool *success
 }
 
 // Iterate and call entry_destroy over each individual entry in a bucket
-static void bucket_destroy(ioopm_entry_t *current_entry)
+static void bucket_destroy(entry_t *current_entry)
 {
-  ioopm_entry_t *next_entry = NULL;
+  entry_t *next_entry = NULL;
    while (current_entry->next != NULL)
  {
    next_entry = current_entry->next;
@@ -231,7 +213,6 @@ static void bucket_destroy(ioopm_entry_t *current_entry)
    current_entry = next_entry;
  }
  entry_destroy(current_entry);
- 
 }
 
 // Iterate over all buckets and call bucket_destroy for each index
@@ -269,7 +250,7 @@ bool ioopm_hash_table_is_empty(ioopm_hash_table_t *ht)
 }
 
 // Go through all entries in a bucket and add 1 to a counter for each entry passed through
-static void itterate_over_bucket(size_t *counter, ioopm_entry_t *entry)
+static void itterate_over_bucket(size_t *counter, entry_t *entry)
 {
   while (entry->next != NULL)
   {
@@ -283,7 +264,7 @@ size_t ioopm_hash_table_size(ioopm_hash_table_t *ht){
  size_t c = 0;
  for (int i = 0; i < ht->capacity; i++)
  {
-   ioopm_entry_t *first_entry = ht->buckets[i];
+   entry_t *first_entry = ht->buckets[i];
    itterate_over_bucket(&c, first_entry);
  }
  return c;
@@ -292,7 +273,7 @@ size_t ioopm_hash_table_size(ioopm_hash_table_t *ht){
 ioopm_list_t *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
   ioopm_list_t *list = ioopm_linked_list_create(ht->key_cmp);
   size_t no_keys = ioopm_hash_table_size(ht);
-  ioopm_entry_t *entry = NULL;
+  entry_t *entry = NULL;
   // If there exist no keys return the empty linked list;
   if (no_keys==0)
   {
@@ -312,7 +293,7 @@ ioopm_list_t *ioopm_hash_table_keys(ioopm_hash_table_t *ht){
 ioopm_list_t *ioopm_hash_table_values(ioopm_hash_table_t *ht){
   ioopm_list_t *list = ioopm_linked_list_create(ht->value_cmp);
   size_t no_values = ioopm_hash_table_size(ht);
-  ioopm_entry_t *entry = NULL;
+  entry_t *entry = NULL;
   // If there exist no keys return the empty linked list;
   if (no_values==0) 
   {
@@ -345,7 +326,7 @@ static bool value_equiv(elem_t key, elem_t value, void *x, ioopm_hash_table_t *h
 }
 
 bool ioopm_hash_table_any(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg){
-  ioopm_entry_t *entry = NULL; 
+  entry_t *entry = NULL; 
   for (size_t i = 0; i < ht->capacity; i++){
     entry = ht->buckets[i]->next;
     while (entry!=NULL){
@@ -360,7 +341,7 @@ bool ioopm_hash_table_any(ioopm_hash_table_t *ht, ioopm_predicate pred, void *ar
 }
 
 bool ioopm_hash_table_all(ioopm_hash_table_t *ht, ioopm_predicate pred, void *arg){
-  ioopm_entry_t *entry = NULL;
+  entry_t *entry = NULL;
   if(ioopm_hash_table_is_empty(ht)){
     return false;
   } 
@@ -386,7 +367,7 @@ bool ioopm_hash_table_has_key(ioopm_hash_table_t *ht, elem_t key){
 }
 
 void ioopm_hash_table_apply_to_all(ioopm_hash_table_t *ht, ioopm_apply_function apply_fun, void *arg){
-  ioopm_entry_t *entry = NULL;
+  entry_t *entry = NULL;
   elem_t *value_p = calloc(1,sizeof(elem_t));
 
   for (size_t i = 0; i < ht->capacity; i++){
