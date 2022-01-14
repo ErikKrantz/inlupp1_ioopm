@@ -71,8 +71,10 @@ coverage_iterator: iterator_test.c iterator.c linked_list.c
 	./hash_cov
 	$(C_COVERAGE) iterator_test.c
 
-
-
+profile_read: readfile.c hash_table.c linked_list.c
+	$(C_COMPILER) $(C_LINK_OPTIONS) -pg readfile.c -pg hash_table.c -pg linked_list.c -o run
+	./run 100k-words.txt
+	gprof run gmon.out > analysis.txt
 
 myprog.final: file1.o file2.o file3.o
 # TODO: add e.g. optimisation flags, remove unnecessary linking, etc.
